@@ -28,7 +28,8 @@ def keychain_password(account: str) -> str:
             f"No SMTP password in Keychain for {account}. Add it with:\n"
             f"  security add-generic-password -s {KEYCHAIN_SERVICE} -a {account} -w"
         )
-    password = out.stdout.strip()
+    # Gmail shows App Passwords as "abcd efgh ijkl mnop"; spaces (incl. non-breaking) aren't part of it
+    password = "".join(out.stdout.split())
     if not password:
         raise RuntimeError(
             f"The Keychain entry for {account} is empty. Re-add it from a normal Terminal window:\n"
