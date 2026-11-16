@@ -28,7 +28,13 @@ def keychain_password(account: str) -> str:
             f"No SMTP password in Keychain for {account}. Add it with:\n"
             f"  security add-generic-password -s {KEYCHAIN_SERVICE} -a {account} -w"
         )
-    return out.stdout.strip()
+    password = out.stdout.strip()
+    if not password:
+        raise RuntimeError(
+            f"The Keychain entry for {account} is empty. Re-add it from a normal Terminal window:\n"
+            f"  security add-generic-password -U -s {KEYCHAIN_SERVICE} -a {account} -w"
+        )
+    return password
 
 
 def _short(s: str, n: int = 90) -> str:
