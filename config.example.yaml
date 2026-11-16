@@ -43,8 +43,9 @@ profiles:
     # AND keywords: all must appear (searched in title, description and tags).
     all_of: [Kubernetes]
     all_of_in: [title, description, tags]
-    # Exclude jobs containing any of these.
-    none_of: []
+    # Exclude jobs whose title contains any of these (see exclude_in).
+    none_of: [Account Executive, Product Manager, Sales, Marketing]
+    exclude_in: [title]
     match_in: [title]          # add description / tags for wider (noisier) matching
     min_score: 1
     # Allowed locations. A job passes if its location mentions one of these, or if it
