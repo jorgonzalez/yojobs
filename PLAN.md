@@ -16,7 +16,7 @@
 - [x] 4. Email notification (SMTP; password in macOS Keychain, not in config)
 - [ ] 5. launchd schedule + log file; warn when a source returns 0 / errors repeatedly
 - [x] 6a. LinkedIn via jobdrop (search without descriptions, fetch descriptions only for title/location matches)
-- [ ] 6b. hiring.cafe: jobdrop's buildId is stale and its browser fallback failed; needs a decision
+- [-] 6b. hiring.cafe: NOT automated. robots.txt disallows `?searchState=` (what jobdrop uses), and even its sitemaps sit behind a Cloudflare challenge. Use it manually / via its own alerts. Same expected for Wellfound.
 - [x] 6c. StartupMap (JSON, no descriptions) and Berlin Startup Jobs (RSS + job page for matches)
 - [x] 6c2. Indeed Germany via jobdrop (Berlin + remote-Germany searches)
 - [ ] 6d. EU Remote Jobs (homepage HTML; job feed/API deliberately disabled by owner), ~45 min
