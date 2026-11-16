@@ -75,7 +75,7 @@ def main(argv=None) -> int:
 
     results.sort(key=lambda j: (j.score, j.published or since), reverse=True)
 
-    store = Store(ROOT / cfg.get("database", "seen.sqlite"))
+    store = Store(ROOT / cfg.get("database", "seen.sqlite"), key_days=cfg.get("dedupe_days", 60))
     new = store.filter_new(results)
     new_ids = {id(j) for j in new}
 

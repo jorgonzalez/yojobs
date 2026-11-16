@@ -12,8 +12,10 @@ email:
   smtp_host: smtp.gmail.com
   smtp_port: 465
 
-# Remembers jobs already emailed (git-ignored).
+# Remembers jobs already emailed (git-ignored). A job's URL is never sent twice;
+# the same company + title (e.g. on another portal) is blocked for dedupe_days.
 database: seen.sqlite
+dedupe_days: 60
 
 # Portals. Set enabled: false to skip one. Extra keys are passed to the source.
 sources:

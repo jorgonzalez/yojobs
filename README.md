@@ -37,6 +37,20 @@ Your address lives only in `config.yaml` (git-ignored); the password only in the
 
 Output is sorted by score (number of distinct `any_of` keywords matched), then date.
 
+## Duplicates
+
+A job is never emailed twice: its URL is remembered forever, and its normalized
+company + title for `dedupe_days` (default 60), which catches reposts and the same
+job on another portal. Normalization drops legal suffixes (GmbH, Inc, B.V....),
+gender tags like (m/w/d), location tails like "- Remote, Germany", and expands
+Sr/Jr/Mgr.
+
+## Tests
+
+```sh
+.venv/bin/python -m unittest discover tests
+```
+
 ## Keywords (config.yaml → profiles)
 
 | key | meaning |
