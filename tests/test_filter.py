@@ -39,11 +39,23 @@ class Titles(unittest.TestCase):
             "Director of Engineering",             # too broad without an area
             "Head of Engineering",                 # too broad without an area
             "Head of Technology",                  # too broad without an area
+            "Project Manager - Infrastructure & Expansion",
+            "Infrastructure Program Manager",
+            "Procurement Manager, Construction and Infrastructure",
         ]:
             self.assertFalse(passes(t), t)
 
     def test_requires_kubernetes(self):
         self.assertFalse(passes("DevOps Manager", description="We use Nomad."))
+
+    def test_no_description_source_is_kept_but_flagged(self):
+        job = Job("startupmap", "Head of Platform", "Acme", "https://x", location="Germany", has_description=False)
+        self.assertTrue(F.apply(job, PROFILE))
+        self.assertEqual(job.notes, ["Kubernetes not verified"])
+
+    def test_description_source_without_kubernetes_still_dropped(self):
+        job = Job("linkedin", "Head of Platform", "Acme", "https://x", location="Germany", description="")
+        self.assertFalse(F.apply(job, PROFILE))
 
     def test_location(self):
         self.assertTrue(passes("DevOps Manager", location="Europe Only"))

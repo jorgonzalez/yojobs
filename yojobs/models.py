@@ -20,10 +20,13 @@ class Job:
     description: str = ""  # plain text
     tags: List[str] = field(default_factory=list)
     salary: str = ""
+    has_description: bool = True  # False for sources that never provide one
+
 
     # Filled in by the filter step
     score: int = 0
     matched: List[str] = field(default_factory=list)
+    notes: List[str] = field(default_factory=list)  # e.g. "Kubernetes not verified"
 
 
 _TAG_RE = re.compile(r"<[^>]+>")

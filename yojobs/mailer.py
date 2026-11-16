@@ -48,7 +48,8 @@ def render(jobs: List[Job], stats: Sequence[Tuple[str, str, str]]) -> Tuple[str,
     for j in jobs:
         date = j.published.strftime("%d %b") if j.published else ""
         meta = " · ".join(x for x in [j.company, _short(j.location, 60), j.salary, f"{j.source} {date}".strip()] if x)
-        lines += [f"[{j.score}] {j.title}", f"    {meta}", f"    matched: {', '.join(j.matched)}", f"    {j.url}", ""]
+        note = f"  ({'; '.join(j.notes)})" if j.notes else ""
+        lines += [f"[{j.score}] {j.title}{note}", f"    {meta}", f"    matched: {', '.join(j.matched)}", f"    {j.url}", ""]
         e = html.escape
         rows.append(
             f'<tr><td style="padding:10px 0;border-bottom:1px solid #e5e5e5;vertical-align:top">'
@@ -57,7 +58,9 @@ def render(jobs: List[Job], stats: Sequence[Tuple[str, str, str]]) -> Tuple[str,
             f'<td style="padding:10px 0 10px 10px;border-bottom:1px solid #e5e5e5">'
             f'<a href="{e(j.url)}" style="font-size:15px;font-weight:600;color:#1a1a1a;text-decoration:none">{e(j.title)}</a>'
             f'<div style="font-size:13px;color:#555;margin-top:2px">{e(meta)}</div>'
-            f'<div style="font-size:12px;color:#888;margin-top:2px">{e(", ".join(j.matched))}</div></td></tr>'
+            f'<div style="font-size:12px;color:#888;margin-top:2px">{e(", ".join(j.matched))}'
+            + (f' · <span style="color:#b45309">{e("; ".join(j.notes))}</span>' if j.notes else "")
+            + '</div></td></tr>'
         )
 
     problems = [(n, m) for n, s, m in stats if s != "ok"]

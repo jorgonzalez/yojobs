@@ -7,6 +7,8 @@ A profile in config.yaml supports:
             matches also add to the score.
   all_of:   AND keywords. Every one must appear, otherwise the job is dropped.
   all_of_in: where all_of is searched (default: title, description, tags).
+            Jobs from sources without descriptions skip all_of and get a
+            "<words> not verified" note instead.
   none_of:  exclusion keywords. Any match drops the job.
   match_in: where any_of/all_of are searched: title, description, tags, company.
   exclude_in: where none_of is searched (default: same as match_in).
@@ -79,8 +81,12 @@ def apply(job: Job, profile: dict, check_all_of: bool = True) -> bool:
 
     all_of = profile.get("all_of") or []
     all_text = _text(job, profile.get("all_of_in") or ["title", "description", "tags"])
+    notes = []
     if check_all_of and len(_hits(all_of, all_text)) != len(all_of):
-        return False
+        if job.has_description:
+            return False
+        # source has no descriptions: can't check, so keep it but say so
+        notes.append(f"{', '.join(all_of)} not verified")
 
     if not location_ok(job.location, profile.get("location_any") or []):
         return False
@@ -101,4 +107,5 @@ def apply(job: Job, profile: dict, check_all_of: bool = True) -> bool:
 
     job.matched = matched
     job.score = len(matched)
+    job.notes = notes
     return True

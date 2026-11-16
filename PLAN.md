@@ -17,13 +17,17 @@
 - [ ] 5. launchd schedule + log file; warn when a source returns 0 / errors repeatedly
 - [x] 6a. LinkedIn via jobdrop (search without descriptions, fetch descriptions only for title/location matches)
 - [ ] 6b. hiring.cafe: jobdrop's buildId is stale and its browser fallback failed; needs a decision
-- [ ] 6c. Indeed, NoFluffJobs, WTTJ, EuroBrussels...
+- [x] 6c. StartupMap (JSON, no descriptions) and Berlin Startup Jobs (RSS + job page for matches)
+- [ ] 6d. EU Remote Jobs (homepage HTML; job feed/API deliberately disabled by owner), ~45 min
+- [ ] 6e. Not feasible: EU-Startups (Cloudflare), Upwork (403, freelance). Low value: The Hub (Nordics), JobFluent (Spain)
 
 ## Filter decisions
 - Kubernetes is required (all_of, searched in title/description/tags).
 - Other keywords are OR + additive score, matched in the title.
 - Location: Germany, Europe/EU/EMEA, worldwide or plain remote. UK-only/US-only dropped.
-- Excluded titles: Account Executive, Product Manager, Sales, Marketing.
+- Title must match a role word (Manager, Head of, Director, Team Lead…) AND an area word (Platform, Infrastructure, DevOps, SRE, Cloud…).
+- Excluded titles: Account Executive, Product Manager, Sales, Marketing, Project/Program Manager, Procurement.
+- Sources without descriptions skip the Kubernetes rule; jobs are marked "Kubernetes not verified".
 
 ## Open questions
 - Jobs tied to one other European country (e.g. "Spain") are currently dropped. OK?

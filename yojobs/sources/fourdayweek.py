@@ -20,5 +20,6 @@ def fetch(cfg, since):
             url=it.get("link") or it.get("guid", ""),
             published=parse_rfc822(it.get("pubDate")),
             description=strip_html(it.get("description")),
+            has_description=False,  # feed only repeats the title
         ))
     return jobs

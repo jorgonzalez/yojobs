@@ -26,6 +26,8 @@ sources:
   workingnomads:  {enabled: true}
   landingjobs:    {enabled: true, max_pages: 6}
   4dayweek:       {enabled: true}
+  startupmap:     {enabled: true}   # no descriptions: Kubernetes marked 'not verified'
+  berlinstartupjobs: {enabled: true}
   # LinkedIn via jobdrop (no account used). Each search = ~2 requests; descriptions
   # are fetched only for jobs whose title + location already match.
   linkedin:
@@ -81,7 +83,7 @@ profiles:
     all_of: [Kubernetes]
     all_of_in: [title, description, tags]
     # Exclude jobs whose title contains any of these (see exclude_in).
-    none_of: [Account Executive, Product Manager, Sales, Marketing]
+    none_of: [Account Executive, Product Manager, Sales, Marketing, Project Manager, Program Manager, Programme Manager, Procurement]
     exclude_in: [title]
     match_in: [title]          # add description / tags for wider (noisier) matching
     min_score: 1

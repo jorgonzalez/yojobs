@@ -74,7 +74,10 @@ Matching is case-insensitive, whole-word; a space also matches a hyphen.
 | weworkremotely | RSS | |
 | workingnomads | JSON | latest ~35 |
 | landingjobs | JSON API | EU tech, many on-site/hybrid |
-| 4dayweek | RSS | titles only, no description |
+| 4dayweek | RSS | titles only, no description → "not verified" |
+| linkedin | jobdrop | searches in config; descriptions fetched only for title/location matches; ~10 min |
+| startupmap | JSON | all ~16k EU startup jobs in one request; no descriptions → "Kubernetes not verified" |
+| berlinstartupjobs | RSS | teaser only; full page fetched for title matches |
 
 Add a source: create `yojobs/sources/<name>.py` with `fetch(cfg, since) -> list[Job]`
 and register it in `yojobs/sources/__init__.py`.

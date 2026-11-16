@@ -94,7 +94,7 @@ def main(argv=None) -> int:
         mark = "*" if id(j) in new_ids else " "
         print(f"{mark}[{j.score}] {j.title} — {j.company}  ({j.source}, {date})")
         loc = j.location if len(j.location) <= 80 else j.location[:77] + "..."
-        extras = " | ".join(x for x in [loc, j.salary, ", ".join(j.matched)] if x)
+        extras = " | ".join(x for x in [loc, j.salary, ", ".join(j.matched), "; ".join(j.notes).upper()] if x)
         if extras:
             print(f"     {extras}")
         print(f"     {j.url}")
