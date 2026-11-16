@@ -31,6 +31,7 @@ sources:
   startupmap:     {enabled: true}   # no descriptions: Kubernetes marked 'not verified'
   berlinstartupjobs: {enabled: true}
   welcometothejungle: {enabled: true}  # sitemaps only (job pages are bot-protected): Berlin jobs, Kubernetes not verified
+  euremotejobs:   {enabled: true}   # homepage (latest ~60); job pages opened only for matches
   # LinkedIn via jobdrop (no account used). Each search = ~2 requests; descriptions
   # are fetched only for jobs whose title + location already match.
   linkedin:

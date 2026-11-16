@@ -90,6 +90,7 @@ Matching is case-insensitive, whole-word; a space also matches a hyphen.
 | berlinstartupjobs | RSS | teaser only; full page fetched for title matches |
 | indeed | jobdrop | Indeed Germany; descriptions included; fast |
 | welcometothejungle | sitemaps | job pages are bot-protected, so sitemap URLs only: Berlin jobs, Kubernetes not verified |
+| euremotejobs | homepage HTML | feed/API disabled by owner; latest ~60 jobs; job page opened only for matches |
 
 LinkedIn and Indeed remote flags are unreliable, so outside Berlin a job from them
 only counts as remote if its location/title/description clearly says so

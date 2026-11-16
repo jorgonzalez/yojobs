@@ -20,7 +20,7 @@
 - [x] 6c. StartupMap (JSON, no descriptions) and Berlin Startup Jobs (RSS + job page for matches)
 - [x] 6c2. Indeed Germany via jobdrop (Berlin + remote-Germany searches)
 - [x] 6c3. Welcome to the Jungle: sitemaps only (robots.txt blocks search; job pages bot-protected → 202/403 after ~60 pages). Berlin jobs only, Kubernetes not verified.
-- [ ] 6d. EU Remote Jobs (homepage HTML; job feed/API deliberately disabled by owner), ~45 min
+- [x] 6d. EU Remote Jobs: homepage cards (title, company, region, date); job page (JobPosting) only for matches
 - [ ] 6e. Not feasible: EU-Startups (Cloudflare), Upwork (403, freelance). Low value: The Hub (Nordics), JobFluent (Spain)
 
 ## Filter decisions
