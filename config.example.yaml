@@ -35,6 +35,7 @@ profiles:
     none_of: []
     match_in: [title]          # add description / tags for wider (noisier) matching
     min_score: 1
-    # Location keywords (job location must contain one). Empty list = no filter.
-    location_any: []
-    location_none: []
+    # Allowed locations. A job passes if its location mentions one of these, or if it
+    # is plain "Remote" with no country. Restricted elsewhere (USA/UK only...) = dropped.
+    # A job listing many countries passes if Germany/Europe is among them.
+    location_any: [Germany, Deutschland, Europe, European, EU, EMEA, CET, Worldwide, Anywhere, Global]

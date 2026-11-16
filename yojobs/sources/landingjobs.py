@@ -13,8 +13,13 @@ def _company(url):
     return parts[1].split("/", 1)[0].replace("-", " ").title() if len(parts) == 2 else ""
 
 
+COUNTRIES = {"DE": "Germany", "PT": "Portugal", "ES": "Spain", "NL": "Netherlands", "FR": "France",
+             "GB": "United Kingdom", "UK": "United Kingdom", "IE": "Ireland", "PL": "Poland", "BE": "Belgium"}
+
+
 def _location(j):
-    locs = [f"{l.get('city', '')} ({l.get('country_code', '')})" for l in j.get("locations") or []]
+    locs = [f"{l.get('city', '')}, {COUNTRIES.get(l.get('country_code', ''), l.get('country_code', ''))}"
+            for l in j.get("locations") or []]
     if j.get("remote"):
         locs.insert(0, "Remote")
     return ", ".join(locs)

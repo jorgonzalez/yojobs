@@ -8,8 +8,9 @@ A profile in config.yaml supports:
   match_in: where any_of/all_of are searched: title, description, tags, company.
   exclude_in: where none_of is searched (default: same as match_in).
   min_score: minimum number of distinct any_of matches (default 1).
-  location_any / location_none: keywords checked against the job's location
-             (jobs with an empty location pass location_any).
+  location_any: allowed places. A job passes if its location mentions one of them,
+             or if its location is empty / plain "Remote" (no restriction).
+             Jobs restricted elsewhere (e.g. "USA Only", "UK") are dropped.
 
 Matching is case-insensitive on whole words; a space in a keyword also matches
 a hyphen, so "team lead" matches "Team-Lead".
@@ -43,6 +44,21 @@ def _hits(keywords: List[str], text: str) -> List[str]:
     return [k for k in keywords if _pattern(k).search(text)]
 
 
+_GENERIC_LOC = re.compile(r"\b(fully|100%|remote|work from home|wfh|only|job|position)\b|[^\w]", re.IGNORECASE)
+
+
+def location_ok(location: str, allowed: List[str]) -> bool:
+    """Keep the job if its location mentions an allowed place (e.g. Germany, Europe,
+    Worldwide), or if it is empty / just "Remote" with no country restriction.
+    Anything else (e.g. "USA Only", "Remote - UK", "Brazil") is dropped.
+    An empty allowed list disables the location filter."""
+    if not allowed:
+        return True
+    if _hits(allowed, location):
+        return True
+    return _GENERIC_LOC.sub("", location or "") == ""
+
+
 def apply(job: Job, profile: dict) -> bool:
     """Return True if the job passes the profile; sets job.score / job.matched."""
     match_in = profile.get("match_in") or ["title"]
@@ -57,10 +73,7 @@ def apply(job: Job, profile: dict) -> bool:
     if len(_hits(all_of, all_text)) != len(all_of):
         return False
 
-    loc_any = profile.get("location_any") or []
-    if loc_any and job.location and not _hits(loc_any, job.location):
-        return False
-    if job.location and _hits(profile.get("location_none") or [], job.location):
+    if not location_ok(job.location, profile.get("location_any") or []):
         return False
 
     matched = _hits(profile.get("any_of") or [], text)
