@@ -18,7 +18,6 @@ profiles:
   - name: platform-leadership
     # OR keywords: each distinct match adds +1 to the score; results sorted by score.
     any_of:
-      - Kubernetes
       - GCP
       - DevOps
       - SRE
@@ -29,8 +28,9 @@ profiles:
       - Manager
       - Engineering Manager
       - Head of
-    # AND keywords: all must appear.
-    all_of: []
+    # AND keywords: all must appear (searched in title, description and tags).
+    all_of: [Kubernetes]
+    all_of_in: [title, description, tags]
     # Exclude jobs containing any of these.
     none_of: []
     match_in: [title]          # add description / tags for wider (noisier) matching

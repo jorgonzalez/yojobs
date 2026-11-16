@@ -43,8 +43,10 @@ def main(argv=None) -> int:
         if name not in SOURCES:
             print(f"[!] unknown source in config: {name}", file=sys.stderr)
             continue
-        # sources with server-side search (e.g. himalayas) get the profile keywords
-        scfg = dict(scfg, _keywords=sorted({k for p in profiles for k in (p.get("any_of") or []) + (p.get("all_of") or [])}))
+        # sources with server-side search (e.g. himalayas) get search terms: a profile's
+        # all_of words if it has any (every match must contain them), else its any_of words
+        terms = {k for p in profiles for k in (p.get("all_of") or p.get("any_of") or [])}
+        scfg = dict(scfg, _keywords=sorted(terms))
         selected[name] = scfg
 
     results, stats = [], []

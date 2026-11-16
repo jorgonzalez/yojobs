@@ -3,6 +3,7 @@
 A profile in config.yaml supports:
   any_of:   OR keywords. Each distinct match adds +1 to the job's score.
   all_of:   AND keywords. Every one must appear, otherwise the job is dropped.
+  all_of_in: where all_of is searched (default: title, description, tags).
   none_of:  exclusion keywords. Any match drops the job.
   match_in: where any_of/all_of are searched: title, description, tags, company.
   exclude_in: where none_of is searched (default: same as match_in).
@@ -52,7 +53,8 @@ def apply(job: Job, profile: dict) -> bool:
         return False
 
     all_of = profile.get("all_of") or []
-    if len(_hits(all_of, text)) != len(all_of):
+    all_text = _text(job, profile.get("all_of_in") or ["title", "description", "tags"])
+    if len(_hits(all_of, all_text)) != len(all_of):
         return False
 
     loc_any = profile.get("location_any") or []
