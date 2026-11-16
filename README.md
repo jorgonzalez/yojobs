@@ -1,0 +1,51 @@
+# yojobs
+
+Local job-alert script: queries several job portals, filters by keywords, and
+(soon) emails new matches a few times a day. Runs entirely on this machine.
+
+## Setup
+
+```sh
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+cp config.example.yaml config.yaml   # then edit keywords/sources
+```
+
+## Run
+
+```sh
+.venv/bin/python -m yojobs                      # all enabled sources
+.venv/bin/python -m yojobs --source jobicy      # one source
+.venv/bin/python -m yojobs --days 1             # override max_age_days
+.venv/bin/python -m yojobs --all                # no keyword filter (debug)
+```
+
+Output is sorted by score (number of distinct `any_of` keywords matched), then date.
+
+## Keywords (config.yaml → profiles)
+
+| key | meaning |
+|---|---|
+| `any_of` | OR keywords; each match adds +1 to the score |
+| `all_of` | AND keywords; all must match |
+| `none_of` | exclude if any matches |
+| `match_in` | fields to search: `title`, `description`, `tags`, `company` |
+| `min_score` | minimum distinct `any_of` matches |
+| `location_any` / `location_none` | keywords checked against the job location |
+
+Matching is case-insensitive, whole-word; a space also matches a hyphen.
+
+## Sources
+
+| name | type | notes |
+|---|---|---|
+| remotive | JSON API | max ~4 requests/day; public feed is 24h delayed and small |
+| himalayas | JSON API | uses keyword search (one query per keyword); rate-limited, ~2 min |
+| jobicy | JSON API | latest 100 |
+| weworkremotely | RSS | |
+| workingnomads | JSON | latest ~35 |
+| landingjobs | JSON API | EU tech, many on-site/hybrid |
+| 4dayweek | RSS | titles only, no description |
+
+Add a source: create `yojobs/sources/<name>.py` with `fetch(cfg, since) -> list[Job]`
+and register it in `yojobs/sources/__init__.py`.

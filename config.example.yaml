@@ -1,0 +1,40 @@
+# Copy to config.yaml and edit. config.yaml is git-ignored.
+
+# Only keep jobs published within the last N days.
+max_age_days: 3
+
+# Portals. Set enabled: false to skip one. Extra keys are passed to the source.
+sources:
+  remotive:       {enabled: true}   # max ~4 runs/day per Remotive's terms
+  himalayas:      {enabled: true, max_pages: 5}   # pages per keyword (search mode)
+  jobicy:         {enabled: true, count: 100}   # optional: geo: europe
+  weworkremotely: {enabled: true}
+  workingnomads:  {enabled: true}
+  landingjobs:    {enabled: true, max_pages: 6}
+  4dayweek:       {enabled: true}
+
+# Search profiles. A job is reported if it passes ANY profile.
+profiles:
+  - name: platform-leadership
+    # OR keywords: each distinct match adds +1 to the score; results sorted by score.
+    any_of:
+      - Kubernetes
+      - GCP
+      - DevOps
+      - SRE
+      - Platform
+      - Infrastructure
+      - Cloud
+      - Team lead
+      - Manager
+      - Engineering Manager
+      - Head of
+    # AND keywords: all must appear.
+    all_of: []
+    # Exclude jobs containing any of these.
+    none_of: []
+    match_in: [title]          # add description / tags for wider (noisier) matching
+    min_score: 1
+    # Location keywords (job location must contain one). Empty list = no filter.
+    location_any: []
+    location_none: []
