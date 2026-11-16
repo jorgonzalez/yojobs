@@ -20,6 +20,21 @@ cp config.example.yaml config.yaml   # then edit keywords/sources
 .venv/bin/python -m yojobs --all                # no keyword filter (debug)
 ```
 
+Preview mode (above) prints matches and marks unseen ones with `*`; it saves nothing.
+
+```sh
+.venv/bin/python -m yojobs --email     # email only jobs not sent before, then remember them
+```
+
+Email setup (Gmail): enable 2-step verification, create an App Password at
+https://myaccount.google.com/apppasswords, then store it in the macOS Keychain:
+
+```sh
+security add-generic-password -s yojobs-smtp -a you@gmail.com -w
+```
+
+Your address lives only in `config.yaml` (git-ignored); the password only in the Keychain.
+
 Output is sorted by score (number of distinct `any_of` keywords matched), then date.
 
 ## Keywords (config.yaml → profiles)

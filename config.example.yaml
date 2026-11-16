@@ -3,6 +3,18 @@
 # Only keep jobs published within the last N days.
 max_age_days: 3
 
+# Email (Gmail SMTP). The password is NOT stored here: it is read from the macOS
+# Keychain. Create a Gmail App Password, then run:
+#   security add-generic-password -s yojobs-smtp -a you@gmail.com -w
+email:
+  username: you@gmail.com     # Gmail account used to send
+  to: you@gmail.com           # where alerts go
+  smtp_host: smtp.gmail.com
+  smtp_port: 465
+
+# Remembers jobs already emailed (git-ignored).
+database: seen.sqlite
+
 # Portals. Set enabled: false to skip one. Extra keys are passed to the source.
 sources:
   remotive:       {enabled: true}   # max ~4 runs/day per Remotive's terms

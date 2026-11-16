@@ -12,8 +12,8 @@
 ## Pieces
 - [x] 1. Skeleton, config, filter, terminal output
 - [x] 2. Tier 1 sources: remotive, himalayas, jobicy, weworkremotely, workingnomads, landingjobs, 4dayweek
-- [ ] 3. SQLite dedupe (URL + normalized company/title) → only new jobs
-- [ ] 4. Email notification (SMTP; password in macOS Keychain, not in config)
+- [x] 3. SQLite dedupe (URL + normalized company/title) → only new jobs
+- [x] 4. Email notification (SMTP; password in macOS Keychain, not in config)
 - [ ] 5. launchd schedule + log file; warn when a source returns 0 / errors repeatedly
 - [ ] 6. Tier 2: LinkedIn/Indeed (jobdrop or JobSpy), hiring.cafe, NoFluffJobs, WTTJ, EuroBrussels...
 
