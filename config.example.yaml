@@ -122,7 +122,7 @@ profiles:
     all_of: ["Kubernetes|K8s"]   # "a|b" = either word
     all_of_in: [title, description, tags]
     # Exclude jobs whose title contains any of these (see exclude_in).
-    none_of: [Account Executive, Product Manager, Sales, Marketing, Project Manager, Program Manager, Programme Manager, Procurement]
+    none_of: [Account Executive, Product Manager, Head of Product, Growth, Sales, Marketing, Project Manager, Program Manager, Programme Manager, Procurement]
     exclude_in: [title]
     match_in: [title]          # add description / tags for wider (noisier) matching
     min_score: 1

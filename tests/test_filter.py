@@ -44,6 +44,8 @@ class Titles(unittest.TestCase):
             "Project Manager - Infrastructure & Expansion",
             "Infrastructure Program Manager",
             "Procurement Manager, Construction and Infrastructure",
+            "Head of Product – Trust Platform Area",
+            "Head of Growth // AI Music Video Platform",
         ]:
             self.assertFalse(passes(t), t)
 

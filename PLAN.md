@@ -27,7 +27,7 @@
 - Other keywords are OR + additive score, matched in the title.
 - Location: Germany, Europe/EU/EMEA, worldwide or plain remote. UK-only/US-only dropped.
 - Title must match a role word (Manager, Head of, Director, Team Lead…) AND an area word (Platform, Infrastructure, DevOps, SRE, Cloud…).
-- Excluded titles: Account Executive, Product Manager, Sales, Marketing, Project/Program Manager, Procurement.
+- Excluded titles: Account Executive, Product Manager, Sales, Marketing, Project/Program Manager, Procurement, Head of Product, Growth.
 - Sources without descriptions skip the Kubernetes rule; jobs are marked "Kubernetes not verified".
 
 ## Open questions
