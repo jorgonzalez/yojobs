@@ -24,6 +24,8 @@ class Titles(unittest.TestCase):
             "Head of Platform Engineering",
             "Director, Site Reliability Engineering",
             "Teamleiter DevOps (m/w/d)",
+            "Head of Engineering, Infrastructure",
+            "Director of Engineering - SRE",
         ]:
             self.assertTrue(passes(t), t)
 
@@ -34,6 +36,9 @@ class Titles(unittest.TestCase):
             "Team Lead, Software Engineering",     # not platform/infra
             "Product Manager, Cloud Platform",     # excluded role
             "Account Executive Cloud & DevOps",    # excluded role
+            "Director of Engineering",             # too broad without an area
+            "Head of Engineering",                 # too broad without an area
+            "Head of Technology",                  # too broad without an area
         ]:
             self.assertFalse(passes(t), t)
 
