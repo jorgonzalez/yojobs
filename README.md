@@ -6,7 +6,7 @@ Local job-alert script: queries several job portals, filters by keywords, and
 ## Setup
 
 ```sh
-python3 -m venv .venv
+/opt/homebrew/bin/python3.12 -m venv .venv   # Python 3.10+ (brew install python@3.12)
 .venv/bin/pip install -r requirements.txt
 cp config.example.yaml config.yaml   # then edit keywords/sources
 ```

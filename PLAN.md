@@ -1,7 +1,7 @@
 # yojobs plan
 
 ## Decisions
-- Local only (macOS, launchd). Python 3.9 system + venv, stdlib HTTP, PyYAML.
+- Local only (macOS, launchd). Python 3.12 (Homebrew) + venv, stdlib HTTP, PyYAML.
 - One config file (`config.yaml`): sources + keyword profiles.
 - Keywords are OR and additive: score = number of distinct matches, sorted by score.
 - Notification: **email** (to self, via SMTP).
