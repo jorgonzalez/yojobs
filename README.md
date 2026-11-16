@@ -88,6 +88,11 @@ Matching is case-insensitive, whole-word; a space also matches a hyphen.
 | linkedin | jobdrop | searches in config; descriptions fetched only for title/location matches; ~10 min |
 | startupmap | JSON | all ~16k EU startup jobs in one request; no descriptions → "Kubernetes not verified" |
 | berlinstartupjobs | RSS | teaser only; full page fetched for title matches |
+| indeed | jobdrop | Indeed Germany; descriptions included; fast |
+
+LinkedIn and Indeed remote flags are unreliable, so outside Berlin a job from them
+only counts as remote if its location/title/description clearly says so
+(`yojobs/remote.py`); jobs remote only per description are marked "check".
 
 Add a source: create `yojobs/sources/<name>.py` with `fetch(cfg, since) -> list[Job]`
 and register it in `yojobs/sources/__init__.py`.

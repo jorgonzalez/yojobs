@@ -18,6 +18,7 @@
 - [x] 6a. LinkedIn via jobdrop (search without descriptions, fetch descriptions only for title/location matches)
 - [ ] 6b. hiring.cafe: jobdrop's buildId is stale and its browser fallback failed; needs a decision
 - [x] 6c. StartupMap (JSON, no descriptions) and Berlin Startup Jobs (RSS + job page for matches)
+- [x] 6c2. Indeed Germany via jobdrop (Berlin + remote-Germany searches)
 - [ ] 6d. EU Remote Jobs (homepage HTML; job feed/API deliberately disabled by owner), ~45 min
 - [ ] 6e. Not feasible: EU-Startups (Cloudflare), Upwork (403, freelance). Low value: The Hub (Nordics), JobFluent (Spain)
 

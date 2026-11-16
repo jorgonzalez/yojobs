@@ -24,6 +24,7 @@ from types import SimpleNamespace
 
 from ..models import Job, strip_html, to_utc
 from ..progress import say
+from ..remote import remote_evidence
 
 
 def _published(value):
@@ -76,6 +77,8 @@ def fetch(cfg, since):
             loc = _str(row.get("location"))
             jobs[url] = Job(
                 source="linkedin",
+                # provisional: lets remote-search jobs reach the description step;
+                # decided for real once the description is known
                 remote=True if remote else None,
                 title=_str(row.get("title")),
                 company=_str(row.get("company")),
@@ -98,6 +101,13 @@ def fetch(cfg, since):
             say(f"    linkedin description {n + 1}/{len(candidates)}: {job.title[:60]}")
             details = li._get_job_details(job._li_id) or {}
             job.description = strip_html(details.get("description") or "")
+    # Decide remote for every job from the wording, not LinkedIn's filter.
+    for job in jobs.values():
+        where = remote_evidence(job.title, job.description)
+        job.remote = bool(where)
+        if where == "description":
+            job.source_notes = ["remote per description, check"]
+    if candidates:
         missing = sum(1 for j in candidates if not j.description)
         if missing:
             print(f"[linkedin] {missing}/{len(candidates)} descriptions could not be fetched "

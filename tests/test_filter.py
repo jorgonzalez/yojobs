@@ -49,6 +49,7 @@ class Titles(unittest.TestCase):
 
     def test_requires_kubernetes(self):
         self.assertFalse(passes("DevOps Manager", description="We use Nomad."))
+        self.assertTrue(passes("DevOps Manager", description="Our stack: GKE / K8s, Terraform."))
 
     def test_no_description_source_is_kept_but_flagged(self):
         job = Job("startupmap", "Head of Platform", "Acme", "https://x", location="Berlin, Germany", has_description=False)

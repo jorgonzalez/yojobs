@@ -22,6 +22,7 @@ class Job:
     salary: str = ""
     has_description: bool = True  # False for sources that never provide one
     remote: Optional[bool] = None  # True remote, False on-site/hybrid, None unknown
+    source_notes: List[str] = field(default_factory=list)  # e.g. "remote per description"
 
 
     # Filled in by the filter step

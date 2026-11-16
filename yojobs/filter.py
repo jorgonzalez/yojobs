@@ -19,7 +19,7 @@ A profile in config.yaml supports:
              "Remote - UK" or "Cork, Ireland" are dropped.
 
 Matching is case-insensitive on whole words; a space in a keyword also matches
-a hyphen, so "team lead" matches "Team-Lead".
+a hyphen, so "team lead" matches "Team-Lead". "Kubernetes|K8s" matches either.
 """
 from __future__ import annotations
 
@@ -32,9 +32,13 @@ _cache: Dict[str, Pattern] = {}
 
 
 def _pattern(keyword: str) -> Pattern:
+    """Whole-word, case-insensitive; spaces also match hyphens; "a|b" means a or b."""
     if keyword not in _cache:
-        parts = [re.escape(p) for p in keyword.strip().split()]
-        _cache[keyword] = re.compile(r"(?<!\w)" + r"[\s\-]+".join(parts) + r"(?!\w)", re.IGNORECASE)
+        alts = []
+        for alt in keyword.split("|"):
+            parts = [re.escape(p) for p in alt.strip().split()]
+            alts.append(r"[\s\-]+".join(parts))
+        _cache[keyword] = re.compile(r"(?<!\w)(?:" + "|".join(alts) + r")(?!\w)", re.IGNORECASE)
     return _cache[keyword]
 
 
@@ -103,12 +107,12 @@ def apply(job: Job, profile: dict, check_all_of: bool = True) -> bool:
 
     all_of = profile.get("all_of") or []
     all_text = _text(job, profile.get("all_of_in") or ["title", "description", "tags"])
-    notes = []
+    notes = list(job.source_notes)
     if check_all_of and len(_hits(all_of, all_text)) != len(all_of):
         if job.has_description:
             return False
         # source has no descriptions: can't check, so keep it but say so
-        notes.append(f"{', '.join(all_of)} not verified")
+        notes.append(f"{', '.join(a.split('|')[0] for a in all_of)} not verified")
 
     if not place_ok(job, profile):
         return False

@@ -45,7 +45,8 @@ sources:
       - {term: "Head of Platform", location: Berlin}
       - {term: "Head of Infrastructure", location: Berlin}
       - {term: "Teamleiter DevOps", location: Berlin}
-      # Remote within Germany (LinkedIn's remote filter)
+      # Remote within Germany. LinkedIn also returns on-site jobs here; a job only
+      # counts as remote if its title/description says so (see sources/linkedin.py)
       - {term: "DevOps Manager", location: Germany, remote: true}
       - {term: "SRE Manager", location: Germany, remote: true}
       - {term: "Engineering Manager Infrastructure", location: Germany, remote: true}
@@ -59,6 +60,31 @@ sources:
       - {term: "Site Reliability Engineering Manager", location: European Union, remote: true}
       - {term: "Platform Engineering Manager", location: European Union, remote: true}
       - {term: "Infrastructure Engineering Manager", location: European Union, remote: true}
+  # Indeed Germany via jobdrop. Fast (descriptions included). Outside Berlin a job
+  # only counts as remote if its location/title/description clearly says so.
+  indeed:
+    enabled: true
+    country: Germany
+    results_per_search: 50
+    searches:
+      # Berlin: any work mode
+      - {term: "DevOps Manager", location: Berlin}
+      - {term: "SRE Manager", location: Berlin}
+      - {term: "Engineering Manager Infrastructure", location: Berlin}
+      - {term: "Engineering Manager Platform", location: Berlin}
+      - {term: "Engineering Manager Cloud", location: Berlin}
+      - {term: "Head of Platform", location: Berlin}
+      - {term: "Head of Infrastructure", location: Berlin}
+      - {term: "Teamleiter DevOps", location: Berlin}
+      # Remote within Germany
+      - {term: "DevOps Manager", location: Germany, remote: true}
+      - {term: "SRE Manager", location: Germany, remote: true}
+      - {term: "Engineering Manager Infrastructure", location: Germany, remote: true}
+      - {term: "Engineering Manager Platform", location: Germany, remote: true}
+      - {term: "Engineering Manager Cloud", location: Germany, remote: true}
+      - {term: "Head of Platform", location: Germany, remote: true}
+      - {term: "Head of Infrastructure", location: Germany, remote: true}
+      - {term: "Teamleiter DevOps", location: Germany, remote: true}
 
 # Search profiles. A job is reported if it passes ANY profile.
 profiles:
@@ -93,7 +119,7 @@ profiles:
     # Extra OR keywords that only add to the score (optional).
     any_of: []
     # AND keywords: all must appear (searched in title, description and tags).
-    all_of: [Kubernetes]
+    all_of: ["Kubernetes|K8s"]   # "a|b" = either word
     all_of_in: [title, description, tags]
     # Exclude jobs whose title contains any of these (see exclude_in).
     none_of: [Account Executive, Product Manager, Sales, Marketing, Project Manager, Program Manager, Programme Manager, Procurement]
