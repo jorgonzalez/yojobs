@@ -30,18 +30,35 @@ sources:
 # Search profiles. A job is reported if it passes ANY profile.
 profiles:
   - name: platform-leadership
-    # OR keywords: each distinct match adds +1 to the score; results sorted by score.
-    any_of:
-      - GCP
-      - DevOps
-      - SRE
-      - Platform
-      - Infrastructure
-      - Cloud
-      - Team lead
-      - Manager
-      - Engineering Manager
-      - Head of
+    # The title must match at least one word from EACH group (AND between groups,
+    # OR inside a group). Every distinct match adds +1 to the score.
+    groups:
+      role:   # leadership roles only, no individual-contributor titles
+        - Manager
+        - Engineering Manager
+        - Head of
+        - Director
+        - VP
+        - Vice President
+        - Team Lead
+        - Teamleiter
+        - Teamleitung
+        - Leiter
+        - Leitung
+      area:   # platform / infrastructure domain
+        - Platform
+        - Plattform
+        - Infrastructure
+        - Infrastruktur
+        - DevOps
+        - SRE
+        - Site Reliability
+        - Reliability
+        - Cloud
+        - GCP
+        - Kubernetes
+    # Extra OR keywords that only add to the score (optional).
+    any_of: []
     # AND keywords: all must appear (searched in title, description and tags).
     all_of: [Kubernetes]
     all_of_in: [title, description, tags]

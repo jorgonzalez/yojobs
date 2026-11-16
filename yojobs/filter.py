@@ -2,6 +2,9 @@
 
 A profile in config.yaml supports:
   any_of:   OR keywords. Each distinct match adds +1 to the job's score.
+  groups:   named keyword lists, e.g. {role: [...], area: [...]}. The job must
+            match at least one word from EVERY group (in match_in). Group
+            matches also add to the score.
   all_of:   AND keywords. Every one must appear, otherwise the job is dropped.
   all_of_in: where all_of is searched (default: title, description, tags).
   none_of:  exclusion keywords. Any match drops the job.
@@ -76,7 +79,17 @@ def apply(job: Job, profile: dict) -> bool:
     if not location_ok(job.location, profile.get("location_any") or []):
         return False
 
+    # groups: every group needs at least one match (AND between groups, OR inside)
+    groups = profile.get("groups") or {}
+    group_hits = []
+    for words in groups.values():
+        hits = _hits(words or [], text)
+        if not hits:
+            return False
+        group_hits += [h for h in hits if h not in group_hits]
+
     matched = _hits(profile.get("any_of") or [], text)
+    matched += [h for h in group_hits if h not in matched]
     if profile.get("any_of") and len(matched) < profile.get("min_score", 1):
         return False
 
