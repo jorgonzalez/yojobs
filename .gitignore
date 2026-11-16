@@ -1,9 +1,11 @@
+*.db
+*.pyc
+*.sqlite
+.DS_Store
+.env
 .venv/
 __pycache__/
-*.pyc
-.DS_Store
 config.yaml
-*.sqlite
-*.db
-.env
 logs/
+schedule_state.json
+yojobs.lock

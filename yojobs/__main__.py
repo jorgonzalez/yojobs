@@ -1,7 +1,10 @@
-"""Run: python -m yojobs [--email] [--config config.yaml] [--source NAME ...] [--days N] [--all]
+"""Run: python -m yojobs [--email | --scheduled | --check-schedule] [--config config.yaml]
+                       [--source NAME ...] [--days N] [--all]
 
 Without --email: preview in the terminal (new jobs marked with *), nothing saved.
-With --email: email only jobs not reported before, then remember them."""
+With --email: email only jobs not reported before, then remember them.
+With --scheduled (used by launchd every 30 min): run with --email only if a run is
+due per the `schedule` config; never two at once; looks back to the last run."""
 from __future__ import annotations
 
 import argparse
@@ -15,6 +18,7 @@ import yaml
 from . import filter as jobfilter
 from . import mailer
 from .progress import say
+from .schedule import RunLock, State, is_due, trim_log
 from .sources import SOURCES
 from .store import Store
 
@@ -53,10 +57,15 @@ def main(argv=None) -> int:
     ap.add_argument("--source", action="append", help="only run this source (repeatable)")
     ap.add_argument("--days", type=float, help="override max_age_days")
     ap.add_argument("--all", action="store_true", help="skip keyword filtering (debug)")
+    ap.add_argument("--scheduled", action="store_true", help="launchd mode: --email only when a run is due")
+    ap.add_argument("--check-schedule", action="store_true", help="only say whether a scheduled run is due")
     args = ap.parse_args(argv)
 
     cfg = load_config(args.config)
     store = Store(ROOT / cfg.get("database", "seen.sqlite"), key_days=cfg.get("dedupe_days", 60))
+    if args.scheduled or args.check_schedule:
+        return scheduled(args, cfg, store)
+
     if args.days is not None:
         days = args.days
     elif store.is_empty():
@@ -64,6 +73,48 @@ def main(argv=None) -> int:
         say(f"First run (no jobs remembered yet): looking back {days:g} days instead of {cfg.get('max_age_days', 3):g}")
     else:
         days = cfg.get("max_age_days", 3)
+    code, _ok = run(args, cfg, store, days)
+    return code
+
+
+def scheduled(args, cfg: dict, store: Store) -> int:
+    trim_log(Path.home() / "Library" / "Logs" / "yojobs.log")
+    state = State(ROOT / cfg.get("schedule_state", "schedule_state.json"))
+    now = datetime.now()
+    due, reason = is_due(cfg.get("schedule") or {}, state, now)
+    if args.check_schedule or not due:
+        say(f"Scheduled run {'due' if due else 'not due'}: {reason}")
+        return 0
+
+    lock = RunLock(ROOT / "yojobs.lock")
+    if not lock.acquire():
+        say("Another yojobs run is still in progress; skipping this one")
+        return 0
+    try:
+        say(f"Scheduled run starting ({reason})")
+        max_age = cfg.get("max_age_days", 3)
+        if store.is_empty():
+            days = cfg.get("first_run_days", 30)
+        elif state.last_run:
+            # cover everything since the previous run (+1h margin), at least max_age_days
+            gap_days = (now - state.last_run).total_seconds() / 86400 + 1 / 24
+            days = min(max(max_age, gap_days), cfg.get("first_run_days", 30))
+        else:
+            days = max_age
+        args.email = True
+        code, ok = run(args, cfg, store, days)
+        if ok:
+            state.record_run(now)
+            say("Scheduled run finished and recorded")
+        else:
+            say("Scheduled run failed (no source answered or email not sent); will retry next tick")
+        return code
+    finally:
+        lock.release()
+
+
+def run(args, cfg: dict, store: Store, days: float):
+    """One full pass. Returns (exit code, ok) where ok means the run did its job."""
     since = datetime.now(timezone.utc) - timedelta(days=days)
     profiles = cfg.get("profiles") or []
 
@@ -86,7 +137,7 @@ def main(argv=None) -> int:
         selected[name] = scfg
 
     results, stats = [], []
-    say(f"Checking {len(selected)} sources for jobs from the last {days:g} days")
+    say(f"Checking {len(selected)} sources for jobs from the last {days:.3g} days")
     for i, (name, scfg) in enumerate(selected.items(), 1):
         t0 = time.time()
         say(f"[{i}/{len(selected)}] {name}...")
@@ -111,15 +162,23 @@ def main(argv=None) -> int:
     say(f"{len(results)} matches, {len(new)} not sent before")
     new_ids = {id(j) for j in new}
 
+    all_failed = bool(stats) and all(s[1] == "ERROR" for s in stats)
     if args.email:
+        if all_failed:
+            say("Every source failed (no internet?); nothing emailed")
+            return 1, False
         if new:
             say(f"Sending email with {len(new)} jobs...")
-            mailer.send(cfg.get("email") or {}, new, stats)
+            try:
+                mailer.send(cfg.get("email") or {}, new, stats)
+            except Exception as exc:
+                say(f"Email failed: {type(exc).__name__}: {exc}")
+                return 1, False  # jobs not marked as seen: they go out next time
             store.mark_seen(new)
         print(f"{datetime.now():%Y-%m-%d %H:%M} emailed {len(new)} new of {len(results)} matches")
         for name, status, msg in stats:
             print(f"  {name:15} {status:5} {msg}")
-        return 1 if stats and all(s[1] == "ERROR" for s in stats) else 0
+        return 0, True
 
     for j in results:
         date = j.published.strftime("%Y-%m-%d") if j.published else "?"
@@ -134,7 +193,7 @@ def main(argv=None) -> int:
     print(f"\n{len(results)} jobs, last {days:g} days ({len(new)} new, marked *)")
     for name, status, msg in stats:
         print(f"  {name:15} {status:5} {msg}")
-    return 1 if stats and all(s[1] == "ERROR" for s in stats) else 0
+    return (1, False) if all_failed else (0, True)
 
 
 if __name__ == "__main__":

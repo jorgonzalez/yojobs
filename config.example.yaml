@@ -5,6 +5,15 @@ max_age_days: 3
 # The very first run (nothing remembered yet) looks further back.
 first_run_days: 30
 
+# Automatic runs (launchd checks every 30 min; see scripts/install-launchd.sh).
+# A run happens only between earliest and latest, at most max_runs_per_day,
+# at least min_gap_hours apart. Missed runs are not caught up; each day starts fresh.
+schedule:
+  earliest: "06:30"
+  latest: "22:00"
+  min_gap_hours: 5
+  max_runs_per_day: 3
+
 # Email (Gmail SMTP). The password is NOT stored here: it is read from the macOS
 # Keychain. Create a Gmail App Password, then run:
 #   security add-generic-password -s yojobs-smtp -a you@gmail.com -w

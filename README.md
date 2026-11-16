@@ -47,6 +47,24 @@ The first run (empty `seen.sqlite`) looks back `first_run_days` (30) instead of
 
 Output is sorted by score (number of distinct `any_of` keywords matched), then date.
 
+## Automatic runs (launchd)
+
+```sh
+./scripts/install-launchd.sh      # install / reinstall
+./scripts/uninstall-launchd.sh    # remove
+.venv/bin/python -m yojobs --check-schedule   # is a run due right now? (runs nothing)
+tail -f ~/Library/Logs/yojobs.log
+```
+
+launchd starts `yojobs --scheduled` every 30 minutes and once after login/wake.
+yojobs only runs (with `--email`) when due per `schedule:` in config.yaml:
+between `earliest` and `latest`, at most `max_runs_per_day`, at least
+`min_gap_hours` apart. Missed runs are not caught up and each day starts fresh.
+Each run looks back to the previous run, so a weekend off loses nothing.
+Safety: a lock prevents overlapping runs; a run where every source fails
+(e.g. no Wi-Fi yet after wake) or the email fails is not counted and is retried
+on the next tick; the log is trimmed above 2 MB.
+
 ## Duplicates
 
 A job is never emailed twice: its URL is remembered forever, and its normalized

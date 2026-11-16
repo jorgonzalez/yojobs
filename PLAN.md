@@ -5,7 +5,7 @@
 - One config file (`config.yaml`): sources + keyword profiles.
 - Keywords are OR and additive: score = number of distinct matches, sorted by score.
 - Notification: **email** (to self, via SMTP).
-- Schedule: 2–3 runs/day (user preference; Remotive allows ≤4). Not set up yet.
+- Schedule: up to 3 runs/day from 06:30, 5h apart, none after 22:00 (Remotive allows ≤4).
 - jobdrop (PyPI, v2.10.0, 33 sources incl. LinkedIn/Indeed/hiring.cafe/Wellfound)
   exists; young project (May 2026). Candidate for adding LinkedIn & co later.
 
@@ -14,7 +14,8 @@
 - [x] 2. Tier 1 sources: remotive, himalayas, jobicy, weworkremotely, workingnomads, landingjobs, 4dayweek
 - [x] 3. SQLite dedupe (URL + normalized company/title) → only new jobs
 - [x] 4. Email notification (SMTP; password in macOS Keychain, not in config)
-- [ ] 5. launchd schedule + log file; warn when a source returns 0 / errors repeatedly
+- [x] 5. launchd schedule (06:30-22:00, max 3/day, 5h gap, no catch-up) + lock + retry + log
+- [ ] 5b. warn when a source returns 0 / errors repeatedly
 - [x] 6a. LinkedIn via jobdrop (search without descriptions, fetch descriptions only for title/location matches)
 - [-] 6b. hiring.cafe: NOT automated. robots.txt disallows `?searchState=` (what jobdrop uses), and even its sitemaps sit behind a Cloudflare challenge. Use it manually / via its own alerts. Same expected for Wellfound.
 - [x] 6c. StartupMap (JSON, no descriptions) and Berlin Startup Jobs (RSS + job page for matches)
