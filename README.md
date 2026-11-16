@@ -89,6 +89,7 @@ Matching is case-insensitive, whole-word; a space also matches a hyphen.
 | startupmap | JSON | all ~16k EU startup jobs in one request; no descriptions → "Kubernetes not verified" |
 | berlinstartupjobs | RSS | teaser only; full page fetched for title matches |
 | indeed | jobdrop | Indeed Germany; descriptions included; fast |
+| welcometothejungle | sitemaps | job pages are bot-protected, so sitemap URLs only: Berlin jobs, Kubernetes not verified |
 
 LinkedIn and Indeed remote flags are unreliable, so outside Berlin a job from them
 only counts as remote if its location/title/description clearly says so

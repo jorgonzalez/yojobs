@@ -30,6 +30,7 @@ sources:
   4dayweek:       {enabled: true}
   startupmap:     {enabled: true}   # no descriptions: Kubernetes marked 'not verified'
   berlinstartupjobs: {enabled: true}
+  welcometothejungle: {enabled: true}  # sitemaps only (job pages are bot-protected): Berlin jobs, Kubernetes not verified
   # LinkedIn via jobdrop (no account used). Each search = ~2 requests; descriptions
   # are fetched only for jobs whose title + location already match.
   linkedin:
