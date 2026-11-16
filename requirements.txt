@@ -1,1 +1,2 @@
 PyYAML>=6.0
+jobdrop==2.10.0   # LinkedIn source (needs Python 3.10+)

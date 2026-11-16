@@ -62,7 +62,13 @@ def location_ok(location: str, allowed: List[str]) -> bool:
     return _GENERIC_LOC.sub("", location or "") == ""
 
 
-def apply(job: Job, profile: dict) -> bool:
+def title_ok(job: Job, profile: dict) -> bool:
+    """Everything except the required (all_of) words: lets sources skip fetching
+    descriptions for jobs that can never match."""
+    return apply(job, profile, check_all_of=False)
+
+
+def apply(job: Job, profile: dict, check_all_of: bool = True) -> bool:
     """Return True if the job passes the profile; sets job.score / job.matched."""
     match_in = profile.get("match_in") or ["title"]
     exclude_in = profile.get("exclude_in") or match_in
@@ -73,7 +79,7 @@ def apply(job: Job, profile: dict) -> bool:
 
     all_of = profile.get("all_of") or []
     all_text = _text(job, profile.get("all_of_in") or ["title", "description", "tags"])
-    if len(_hits(all_of, all_text)) != len(all_of):
+    if check_all_of and len(_hits(all_of, all_text)) != len(all_of):
         return False
 
     if not location_ok(job.location, profile.get("location_any") or []):

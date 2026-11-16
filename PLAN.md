@@ -15,7 +15,9 @@
 - [x] 3. SQLite dedupe (URL + normalized company/title) → only new jobs
 - [x] 4. Email notification (SMTP; password in macOS Keychain, not in config)
 - [ ] 5. launchd schedule + log file; warn when a source returns 0 / errors repeatedly
-- [ ] 6. Tier 2: LinkedIn/Indeed (jobdrop or JobSpy), hiring.cafe, NoFluffJobs, WTTJ, EuroBrussels...
+- [x] 6a. LinkedIn via jobdrop (search without descriptions, fetch descriptions only for title/location matches)
+- [ ] 6b. hiring.cafe: jobdrop's buildId is stale and its browser fallback failed; needs a decision
+- [ ] 6c. Indeed, NoFluffJobs, WTTJ, EuroBrussels...
 
 ## Filter decisions
 - Kubernetes is required (all_of, searched in title/description/tags).

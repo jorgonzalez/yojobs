@@ -26,6 +26,24 @@ sources:
   workingnomads:  {enabled: true}
   landingjobs:    {enabled: true, max_pages: 6}
   4dayweek:       {enabled: true}
+  # LinkedIn via jobdrop (no account used). Each search = ~2 requests; descriptions
+  # are fetched only for jobs whose title + location already match.
+  linkedin:
+    enabled: true
+    results_per_search: 50
+    searches:
+      - {term: "DevOps Manager", location: Germany}
+      - {term: "SRE Manager", location: Germany}
+      - {term: "Engineering Manager Infrastructure", location: Germany}
+      - {term: "Engineering Manager Platform", location: Germany}
+      - {term: "Engineering Manager Cloud", location: Germany}
+      - {term: "Head of Platform", location: Germany}
+      - {term: "Head of Infrastructure", location: Germany}
+      - {term: "Teamleiter DevOps", location: Germany}
+      - {term: "DevOps Manager", location: European Union, remote: true}
+      - {term: "Site Reliability Engineering Manager", location: European Union, remote: true}
+      - {term: "Platform Engineering Manager", location: European Union, remote: true}
+      - {term: "Infrastructure Engineering Manager", location: European Union, remote: true}
 
 # Search profiles. A job is reported if it passes ANY profile.
 profiles:

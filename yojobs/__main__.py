@@ -54,7 +54,8 @@ def main(argv=None) -> int:
         # sources with server-side search (e.g. himalayas) get search terms: a profile's
         # all_of words if it has any (every match must contain them), else its any_of words
         terms = {k for p in profiles for k in (p.get("all_of") or p.get("any_of") or [])}
-        scfg = dict(scfg, _keywords=sorted(terms))
+        scfg = dict(scfg, _keywords=sorted(terms),
+                    _title_ok=lambda job: any(jobfilter.title_ok(job, p) for p in profiles))
         selected[name] = scfg
 
     results, stats = [], []
