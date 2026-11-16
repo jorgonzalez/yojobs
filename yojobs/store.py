@@ -115,6 +115,9 @@ class Store:
             self.db.executemany("UPDATE seen SET key = ? WHERE url = ?", updates)
             self.db.commit()
 
+    def is_empty(self) -> bool:
+        return self.db.execute("SELECT 1 FROM seen LIMIT 1").fetchone() is None
+
     def _cutoff(self) -> str:
         return (datetime.now(timezone.utc) - timedelta(days=self.key_days)).isoformat(timespec="seconds")
 

@@ -35,6 +35,16 @@ security add-generic-password -s yojobs-smtp -a you@gmail.com -w
 
 Your address lives only in `config.yaml` (git-ignored); the password only in the Keychain.
 
+The first run (empty `seen.sqlite`) looks back `first_run_days` (30) instead of
+`max_age_days` (3). Progress is printed to stderr while sources run; results go to stdout.
+
+## Where you can work (profile)
+
+- `onsite_cities: [Berlin]`: on-site / hybrid jobs only there.
+- `remote_regions`: remote jobs must be open to one of these (Germany, Europe, worldwide…).
+  For LinkedIn remote jobs the location means where you may live, so
+  "Remote · Cork, Ireland" (remote within Ireland) is dropped.
+
 Output is sorted by score (number of distinct `any_of` keywords matched), then date.
 
 ## Duplicates

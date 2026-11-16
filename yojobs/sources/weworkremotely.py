@@ -16,6 +16,7 @@ def fetch(cfg, since):
             company, title = "", raw
         jobs.append(Job(
             source="weworkremotely",
+            remote=True,  # remote-only board
             title=title.strip(),
             company=company.strip(),
             url=it.get("link") or it.get("guid", ""),

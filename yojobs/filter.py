@@ -13,9 +13,10 @@ A profile in config.yaml supports:
   match_in: where any_of/all_of are searched: title, description, tags, company.
   exclude_in: where none_of is searched (default: same as match_in).
   min_score: minimum number of distinct any_of matches (default 1).
-  location_any: allowed places. A job passes if its location mentions one of them,
-             or if its location is empty / plain "Remote" (no restriction).
-             Jobs restricted elsewhere (e.g. "USA Only", "UK") are dropped.
+  onsite_cities: on-site/hybrid jobs are only kept in these places (e.g. Berlin).
+  remote_regions: remote jobs are kept if their location (where you may live)
+             mentions one of these, or is empty / plain "Remote". "USA Only",
+             "Remote - UK" or "Cork, Ireland" are dropped.
 
 Matching is case-insensitive on whole words; a space in a keyword also matches
 a hyphen, so "team lead" matches "Team-Lead".
@@ -53,15 +54,36 @@ _GENERIC_LOC = re.compile(r"\b(fully|100%|remote|work from home|wfh|only|job|pos
 
 
 def location_ok(location: str, allowed: List[str]) -> bool:
-    """Keep the job if its location mentions an allowed place (e.g. Germany, Europe,
-    Worldwide), or if it is empty / just "Remote" with no country restriction.
-    Anything else (e.g. "USA Only", "Remote - UK", "Brazil") is dropped.
-    An empty allowed list disables the location filter."""
+    """Region check for REMOTE jobs: keep if the location mentions an allowed region
+    (e.g. Germany, Europe, Worldwide), or is empty / just "Remote" (no restriction).
+    Anything else (e.g. "USA Only", "Remote - UK", "Cork, Ireland") is dropped.
+    An empty allowed list disables the check."""
     if not allowed:
         return True
     if _hits(allowed, location):
         return True
     return _GENERIC_LOC.sub("", location or "") == ""
+
+
+_REMOTE_WORDS = re.compile(r"\b(remote|anywhere|worldwide|work from home|wfh|distributed)\b", re.IGNORECASE)
+
+
+def is_remote(job: Job) -> bool:
+    if job.remote is not None:
+        return job.remote
+    return not job.location or bool(_REMOTE_WORDS.search(job.location))
+
+
+def place_ok(job: Job, profile: dict) -> bool:
+    """On-site/hybrid jobs: only in `onsite_cities` (e.g. Berlin).
+    Remote jobs: the location (= where you may live) must be an allowed region."""
+    cities = profile.get("onsite_cities") or []
+    regions = profile.get("remote_regions") or profile.get("location_any") or []
+    if cities and _hits(cities, job.location):
+        return True  # any work mode is fine in your city
+    if is_remote(job):
+        return location_ok(job.location, regions)
+    return not cities and location_ok(job.location, regions)
 
 
 def title_ok(job: Job, profile: dict) -> bool:
@@ -88,7 +110,7 @@ def apply(job: Job, profile: dict, check_all_of: bool = True) -> bool:
         # source has no descriptions: can't check, so keep it but say so
         notes.append(f"{', '.join(all_of)} not verified")
 
-    if not location_ok(job.location, profile.get("location_any") or []):
+    if not place_ok(job, profile):
         return False
 
     # groups: every group needs at least one match (AND between groups, OR inside)

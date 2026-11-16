@@ -37,6 +37,7 @@ def fetch(cfg, since):
             lo, hi = j.get("gross_salary_low"), j.get("gross_salary_high")
             jobs.append(Job(
                 source="landingjobs",
+                remote=bool(j.get("remote")),
                 title=j.get("title", ""),
                 company=_company(url),
                 url=url,

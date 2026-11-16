@@ -14,6 +14,7 @@ def fetch(cfg, since):
     for j in data.get("jobs", []):
         jobs.append(Job(
             source="remotive",
+            remote=True,  # remote-only board
             title=j.get("title", ""),
             company=j.get("company_name", ""),
             url=j.get("url", ""),

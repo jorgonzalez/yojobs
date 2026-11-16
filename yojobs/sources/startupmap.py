@@ -16,6 +16,14 @@ def _company(startup_id: str) -> str:
     return _COUNTRY_SUFFIX.sub("", startup_id or "").replace("_", " ").replace("-", " ").title()
 
 
+def _remote(j):
+    if j.get("is_remote") or j.get("workplace_type") == "remote":
+        return True
+    if j.get("workplace_type") in ("onsite", "hybrid"):
+        return False
+    return None
+
+
 def _location(j) -> str:
     countries = ", ".join(j.get("job_countries") or [j.get("job_country") or ""]).strip(", ")
     city = j.get("location_display") or ""
@@ -36,6 +44,7 @@ def fetch(cfg, since):
             continue
         jobs.append(Job(
             source="startupmap",
+            remote=_remote(j),
             title=j.get("job_title") or "",
             company=_company(j.get("startup_id", "")),
             url=j["apply_url"],

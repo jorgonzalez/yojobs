@@ -8,6 +8,7 @@ import time
 
 from ..http import get_json
 from ..models import Job, from_timestamp, strip_html
+from ..progress import say
 
 BROWSE_URL = "https://himalayas.app/jobs/api"
 SEARCH_URL = "https://himalayas.app/jobs/api/search"
@@ -23,6 +24,7 @@ def _salary(j):
 def _job(j):
     return Job(
         source="himalayas",
+        remote=True,  # remote-only board
         title=j.get("title", ""),
         company=j.get("companyName", ""),
         url=j.get("applicationLink") or j.get("guid", ""),
@@ -37,6 +39,7 @@ def _job(j):
 def _search(cfg, since):
     found = {}
     for kw in cfg.get("_keywords", []):
+        say(f"    himalayas search: {kw}")
         for page in range(1, cfg.get("max_pages", 5) + 1):
             time.sleep(cfg.get("delay_seconds", 1.5))  # be polite; they rate-limit
             data = get_json(SEARCH_URL, {"q": kw, "sort": "recent", "page": page})

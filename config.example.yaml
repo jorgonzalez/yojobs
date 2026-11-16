@@ -2,6 +2,8 @@
 
 # Only keep jobs published within the last N days.
 max_age_days: 3
+# The very first run (nothing remembered yet) looks further back.
+first_run_days: 30
 
 # Email (Gmail SMTP). The password is NOT stored here: it is read from the macOS
 # Keychain. Create a Gmail App Password, then run:
@@ -20,7 +22,7 @@ dedupe_days: 60
 # Portals. Set enabled: false to skip one. Extra keys are passed to the source.
 sources:
   remotive:       {enabled: true}   # max ~4 runs/day per Remotive's terms
-  himalayas:      {enabled: true, max_pages: 5}   # pages per keyword (search mode)
+  himalayas:      {enabled: true, max_pages: 20}  # pages of 20 per keyword; stops early once jobs are older than the window
   jobicy:         {enabled: true, count: 100}   # optional: geo: europe
   weworkremotely: {enabled: true}
   workingnomads:  {enabled: true}
@@ -34,14 +36,25 @@ sources:
     enabled: true
     results_per_search: 50
     searches:
-      - {term: "DevOps Manager", location: Germany}
-      - {term: "SRE Manager", location: Germany}
-      - {term: "Engineering Manager Infrastructure", location: Germany}
-      - {term: "Engineering Manager Platform", location: Germany}
-      - {term: "Engineering Manager Cloud", location: Germany}
-      - {term: "Head of Platform", location: Germany}
-      - {term: "Head of Infrastructure", location: Germany}
-      - {term: "Teamleiter DevOps", location: Germany}
+      # Berlin: any work mode (on-site, hybrid or remote)
+      - {term: "DevOps Manager", location: Berlin}
+      - {term: "SRE Manager", location: Berlin}
+      - {term: "Engineering Manager Infrastructure", location: Berlin}
+      - {term: "Engineering Manager Platform", location: Berlin}
+      - {term: "Engineering Manager Cloud", location: Berlin}
+      - {term: "Head of Platform", location: Berlin}
+      - {term: "Head of Infrastructure", location: Berlin}
+      - {term: "Teamleiter DevOps", location: Berlin}
+      # Remote within Germany (LinkedIn's remote filter)
+      - {term: "DevOps Manager", location: Germany, remote: true}
+      - {term: "SRE Manager", location: Germany, remote: true}
+      - {term: "Engineering Manager Infrastructure", location: Germany, remote: true}
+      - {term: "Engineering Manager Platform", location: Germany, remote: true}
+      - {term: "Engineering Manager Cloud", location: Germany, remote: true}
+      - {term: "Head of Platform", location: Germany, remote: true}
+      - {term: "Head of Infrastructure", location: Germany, remote: true}
+      - {term: "Teamleiter DevOps", location: Germany, remote: true}
+      # Remote across the EU: only kept if the job's location says Germany/EU/Europe
       - {term: "DevOps Manager", location: European Union, remote: true}
       - {term: "Site Reliability Engineering Manager", location: European Union, remote: true}
       - {term: "Platform Engineering Manager", location: European Union, remote: true}
@@ -87,7 +100,9 @@ profiles:
     exclude_in: [title]
     match_in: [title]          # add description / tags for wider (noisier) matching
     min_score: 1
-    # Allowed locations. A job passes if its location mentions one of these, or if it
-    # is plain "Remote" with no country. Restricted elsewhere (USA/UK only...) = dropped.
-    # A job listing many countries passes if Germany/Europe is among them.
-    location_any: [Germany, Deutschland, Europe, European, EU, EMEA, CET, Worldwide, Anywhere, Global]
+    # Where you can work:
+    #  - on-site / hybrid jobs: only in these cities
+    onsite_cities: [Berlin]
+    #  - remote jobs: the location (= where you may live) must mention one of these,
+    #    or be plain "Remote". "Remote, Ireland" or "USA only" are dropped.
+    remote_regions: [Germany, Deutschland, Europe, European, EU, EMEA, CET, Worldwide, Anywhere, Global]

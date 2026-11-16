@@ -21,6 +21,7 @@ class Job:
     tags: List[str] = field(default_factory=list)
     salary: str = ""
     has_description: bool = True  # False for sources that never provide one
+    remote: Optional[bool] = None  # True remote, False on-site/hybrid, None unknown
 
 
     # Filled in by the filter step

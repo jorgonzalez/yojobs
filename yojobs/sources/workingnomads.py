@@ -12,6 +12,7 @@ def fetch(cfg, since):
     for j in get_json(URL):
         jobs.append(Job(
             source="workingnomads",
+            remote=True,  # remote-only board
             title=j.get("title", ""),
             company=j.get("company_name", ""),
             url=j.get("url", ""),

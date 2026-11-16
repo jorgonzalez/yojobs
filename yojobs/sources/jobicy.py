@@ -23,6 +23,7 @@ def fetch(cfg, since):
     for j in data.get("jobs", []):
         jobs.append(Job(
             source="jobicy",
+            remote=True,  # remote-only board
             title=strip_html(j.get("jobTitle")),
             company=j.get("companyName", ""),
             url=j.get("url", ""),

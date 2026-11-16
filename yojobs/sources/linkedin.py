@@ -10,8 +10,8 @@ config.yaml:
     enabled: true
     results_per_search: 50
     searches:
-      - {term: "DevOps Manager", location: Germany}
-      - {term: "SRE Manager", location: European Union, remote: true}
+      - {term: "DevOps Manager", location: Berlin}               # on-site/hybrid/remote in Berlin
+      - {term: "DevOps Manager", location: Germany, remote: true} # remote within Germany
 """
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 
 from ..models import Job, strip_html, to_utc
+from ..progress import say
 
 
 def _published(value):
@@ -50,9 +51,12 @@ def fetch(cfg, since):
     title_ok = cfg.get("_title_ok") or (lambda job: True)
 
     jobs = {}
-    for i, s in enumerate(cfg.get("searches") or []):
+    searches = cfg.get("searches") or []
+    for i, s in enumerate(searches):
         if i:
             time.sleep(random.uniform(4, 8))
+        where = f"{s.get('location') or 'anywhere'}{' (remote)' if s.get('remote') else ''}"
+        say(f"    linkedin search {i + 1}/{len(searches)}: \"{s['term']}\" in {where}")
         remote = bool(s.get("remote"))
         df = scrape_jobs(
             site_name="linkedin",
@@ -67,11 +71,12 @@ def fetch(cfg, since):
             url = _str(row.get("job_url"))
             if not url or url in jobs:
                 continue
+            # For remote jobs LinkedIn's location is where you may live/work from
+            # ("Cork, Ireland" = remote within Ireland), so keep it as is.
             loc = _str(row.get("location"))
-            if remote:
-                loc = f"Remote ({s.get('location') or 'anywhere'}) · {loc}".rstrip(" ·")
             jobs[url] = Job(
                 source="linkedin",
+                remote=True if remote else None,
                 title=_str(row.get("title")),
                 company=_str(row.get("company")),
                 url=url,
@@ -83,12 +88,14 @@ def fetch(cfg, since):
 
     # Only fetch descriptions for jobs that already pass title + location rules.
     candidates = [j for j in jobs.values() if title_ok(j)]
+    say(f"    linkedin: {len(jobs)} jobs found, {len(candidates)} match title + location; fetching their descriptions")
     if candidates:
         li = LinkedIn()
         li.scraper_input = SimpleNamespace(description_format=DescriptionFormat.MARKDOWN)
         for n, job in enumerate(candidates):
             if n:
                 time.sleep(random.uniform(2, 5))
+            say(f"    linkedin description {n + 1}/{len(candidates)}: {job.title[:60]}")
             details = li._get_job_details(job._li_id) or {}
             job.description = strip_html(details.get("description") or "")
         missing = sum(1 for j in candidates if not j.description)

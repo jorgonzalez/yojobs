@@ -14,17 +14,36 @@ import yaml
 
 from . import filter as jobfilter
 from . import mailer
+from .progress import say
 from .sources import SOURCES
 from .store import Store
 
 ROOT = Path(__file__).resolve().parent.parent  # repo dir; launchd runs from elsewhere
 
 
+class _StrictLoader(yaml.SafeLoader):
+    """YAML loader that rejects duplicate keys (plain YAML silently keeps the last)."""
+
+
+def _no_duplicates(loader, node, deep=False):
+    seen = set()
+    for key_node, _ in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if key in seen:
+            raise yaml.constructor.ConstructorError(
+                None, None, f"duplicate key {key!r} in config", key_node.start_mark)
+        seen.add(key)
+    return loader.construct_mapping(node, deep)
+
+
+_StrictLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _no_duplicates)
+
+
 def load_config(path: Path) -> dict:
     if not path.exists():
         sys.exit(f"Config not found: {path}. Copy config.example.yaml to config.yaml first.")
     with path.open() as fh:
-        return yaml.safe_load(fh) or {}
+        return yaml.load(fh, Loader=_StrictLoader) or {}
 
 
 def main(argv=None) -> int:
@@ -37,7 +56,14 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
 
     cfg = load_config(args.config)
-    days = args.days if args.days is not None else cfg.get("max_age_days", 3)
+    store = Store(ROOT / cfg.get("database", "seen.sqlite"), key_days=cfg.get("dedupe_days", 60))
+    if args.days is not None:
+        days = args.days
+    elif store.is_empty():
+        days = cfg.get("first_run_days", 30)
+        say(f"First run (no jobs remembered yet): looking back {days:g} days instead of {cfg.get('max_age_days', 3):g}")
+    else:
+        days = cfg.get("max_age_days", 3)
     since = datetime.now(timezone.utc) - timedelta(days=days)
     profiles = cfg.get("profiles") or []
 
@@ -59,12 +85,15 @@ def main(argv=None) -> int:
         selected[name] = scfg
 
     results, stats = [], []
-    for name, scfg in selected.items():
+    say(f"Checking {len(selected)} sources for jobs from the last {days:g} days")
+    for i, (name, scfg) in enumerate(selected.items(), 1):
         t0 = time.time()
+        say(f"[{i}/{len(selected)}] {name}...")
         try:
             jobs = SOURCES[name](scfg, since)
         except Exception as exc:  # one broken portal must not stop the run
             stats.append((name, "ERROR", f"{type(exc).__name__}: {exc}"))
+            say(f"[{i}/{len(selected)}] {name}: ERROR {type(exc).__name__}: {exc}")
             continue
         recent = [j for j in jobs if j.published is None or j.published >= since]
         if args.all:
@@ -72,16 +101,18 @@ def main(argv=None) -> int:
         else:
             kept = [j for j in recent if any(jobfilter.apply(j, p) for p in profiles)]
         results.extend(kept)
-        stats.append((name, "ok", f"{len(jobs)} fetched, {len(recent)} recent, {len(kept)} matched ({time.time() - t0:.1f}s)"))
+        stats.append((name, "ok", f"{len(jobs)} fetched, {len(recent)} from last {days:g} days, {len(kept)} matched ({time.time() - t0:.1f}s)"))
+        say(f"[{i}/{len(selected)}] {name}: {len(kept)} matched ({time.time() - t0:.0f}s)")
 
     results.sort(key=lambda j: (j.score, j.published or since), reverse=True)
 
-    store = Store(ROOT / cfg.get("database", "seen.sqlite"), key_days=cfg.get("dedupe_days", 60))
     new = store.filter_new(results)
+    say(f"{len(results)} matches, {len(new)} not sent before")
     new_ids = {id(j) for j in new}
 
     if args.email:
         if new:
+            say(f"Sending email with {len(new)} jobs...")
             mailer.send(cfg.get("email") or {}, new, stats)
             store.mark_seen(new)
         print(f"{datetime.now():%Y-%m-%d %H:%M} emailed {len(new)} new of {len(results)} matches")
