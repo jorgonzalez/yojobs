@@ -24,7 +24,8 @@
 - [x] 6d. EU Remote Jobs: homepage cards (title, company, region, date); job page (JobPosting) only for matches
 - [x] Hacker News "Who is hiring?" (HN Search API): few leadership roles; cheap, kept enabled
 - [-] Kube Careers: checked, skipped. No feed, API needs login; public pages show only ~13 jobs (5 remote), mostly US ICs; Germany page empty.
-- [ ] Next candidates: company career pages (Greenhouse/Lever/Ashby public APIs), Arbeitnow, RemoteOK
+- [x] Company career pages: 66 boards (Greenhouse/Lever/Ashby official APIs); add more in config
+- [ ] Next candidates: Arbeitnow, RemoteOK
 - [ ] 6e. Not feasible: EU-Startups (Cloudflare), Upwork (403, freelance). Low value: The Hub (Nordics), JobFluent (Spain)
 
 ## Filter decisions

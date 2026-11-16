@@ -42,6 +42,31 @@ sources:
   welcometothejungle: {enabled: true}  # sitemaps only (job pages are bot-protected): Berlin jobs, Kubernetes not verified
   euremotejobs:   {enabled: true}   # homepage (latest ~60); job pages opened only for matches
   hackernews:     {enabled: true, threads: 2}   # monthly 'Who is hiring?' threads (latest 2)
+  # Company career pages via the official Greenhouse / Lever / Ashby job APIs.
+  # Add a company as "<system>:<board id>" (the id is in its jobs page URL, e.g.
+  # job-boards.greenhouse.io/<id>, jobs.lever.co/<id>, jobs.ashbyhq.com/<id>).
+  companies:
+    enabled: true
+    boards: [
+      # remote-first / infrastructure & developer-tool companies
+      "greenhouse:gitlab", "greenhouse:grafanalabs", "greenhouse:elastic", "greenhouse:datadog",
+      "greenhouse:mongodb", "greenhouse:canonical", "greenhouse:vercel", "ashby:clickhouse",
+      "greenhouse:cloudflare", "greenhouse:tailscale", "ashby:supabase", "ashby:posthog",
+      "ashby:temporal", "greenhouse:chainguard", "greenhouse:upbound", "greenhouse:mattermost",
+      "ashby:kong", "greenhouse:cockroachlabs", "ashby:weaviate", "ashby:airbyte",
+      "greenhouse:planetscale", "greenhouse:netlify", "ashby:sentry", "greenhouse:honeycomb",
+      "greenhouse:circleci", "greenhouse:jetbrains", "greenhouse:neo4j", "ashby:influxdata",
+      "ashby:tigerdata", "ashby:doppler", "lever:sysdig", "lever:scaleway", "greenhouse:ionos",
+      "ashby:zapier", "ashby:buffer", "greenhouse:ghost", "ashby:oyster", "lever:toptal",
+      "ashby:camunda", "ashby:miro",
+      # Berlin / Germany / EU tech companies
+      "greenhouse:n26", "greenhouse:contentful", "ashby:getyourguide", "greenhouse:hellofresh",
+      "greenhouse:sumup", "greenhouse:raisin", "greenhouse:celonis", "ashby:n8n", "ashby:upvest",
+      "ashby:pliant", "ashby:taktile", "ashby:parloa", "ashby:enpal", "ashby:trawa",
+      "ashby:lyceum", "greenhouse:solarisbank", "greenhouse:grover", "ashby:forto", "ashby:choco",
+      "greenhouse:wolt", "greenhouse:bitpanda", "greenhouse:gocardless", "greenhouse:wise",
+      "greenhouse:monzo", "lever:agicap", "ashby:mimica",
+    ]
   # LinkedIn via jobdrop (no account used). Each search = ~2 requests; descriptions
   # are fetched only for jobs whose title + location already match.
   linkedin:

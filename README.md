@@ -110,6 +110,7 @@ Matching is case-insensitive, whole-word; a space also matches a hyphen.
 | welcometothejungle | sitemaps | job pages are bot-protected, so sitemap URLs only: Berlin jobs, Kubernetes not verified |
 | euremotejobs | homepage HTML | feed/API disabled by owner; latest ~60 jobs; job page opened only for matches |
 | hackernews | HN Search API | monthly "Who is hiring?" threads (latest 2); first line `Company \| Role \| Location \| REMOTE (EU)` parsed |
+| companies | Greenhouse / Lever / Ashby APIs | company career pages; edit `boards:` ("system:id"); ~70 s for 66 companies |
 
 LinkedIn and Indeed remote flags are unreliable, so outside Berlin a job from them
 only counts as remote if its location/title/description clearly says so
