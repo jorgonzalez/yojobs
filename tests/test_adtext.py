@@ -102,19 +102,20 @@ class MatchOne(unittest.TestCase):
         self.tmp.cleanup()
 
     def run_match(self, arg, models=("gpt-oss:20b",)):
-        answer = {"score": 87, "strengths": ["Kubernetes"], "gaps": [], "summary": "You fit."}
+        answer = {"role": "strong", "wishes": "neutral", "strengths": ["Kubernetes"], "gaps_list": [], "summary": "You fit."}
         out = io.StringIO()
         with mock.patch.object(matching, "ollama_models", return_value=list(models) if models else None), \
                 mock.patch.object(matching, "_post", lambda *a: {"message": {"content": json.dumps(answer)}}), \
                 mock.patch.object(matching, "note"), redirect_stdout(out):
-            code = matching.match_one({"matching": {"enabled": False}}, self.root, arg)  # works even when off
+            code = matching.match_one({"matching": {"enabled": False, "criteria": ["role", "wishes"]}},
+                                      self.root, arg)  # works even when off
         return code, out.getvalue()
 
     def test_scores_a_saved_page(self):
         code, out = self.run_match(str(self.ad))
         self.assertEqual(code, 0)
         self.assertIn("Engineering Manager, Platform — Acme", out)
-        self.assertIn("CV match 87%", out)
+        self.assertIn("CV match 88%  (role: strong, wishes: neutral)", out)
 
     def test_ollama_down_and_blocked(self):
         code, out = self.run_match(str(self.ad), models=None)

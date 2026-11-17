@@ -44,7 +44,7 @@ def _short(s: str, n: int = 90) -> str:
 
 def match_line(m: dict) -> str:
     """'CV match 82% · strong: a, b · gaps: c'"""
-    parts = [f"CV match {m['score']}%"]
+    parts = [f"CV match {m['score']}%"] + [f"{k}: {v}" for k, v in (m.get("ratings") or {}).items()]
     if m.get("strengths"):
         parts.append("strong: " + ", ".join(m["strengths"]))
     if m.get("gaps"):
@@ -59,6 +59,7 @@ def _match_html(m: dict) -> str:
     return (f'<div style="font-size:12px;margin-top:4px">'
             f'<span style="display:inline-block;padding:1px 7px;border-radius:10px;font-weight:600;'
             f'color:{color[0]};background:{color[1]}">CV match {score}%</span>'
+            + "".join(f' <span style="color:#555">{e(k)}: <b>{e(v)}</b></span>' for k, v in (m.get("ratings") or {}).items())
             + (f' <span style="color:#15803d">✓ {e(", ".join(m.get("strengths") or []))}</span>' if m.get("strengths") else "")
             + (f' <span style="color:#a16207">△ {e(", ".join(m.get("gaps") or []))}</span>' if m.get("gaps") else "")
             + (f'<div style="color:#666;margin-top:2px">{e(m.get("summary") or "")}</div>' if m.get("summary") else "")

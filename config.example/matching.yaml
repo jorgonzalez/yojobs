@@ -22,4 +22,14 @@ matching:
   cv_dir: cv
   max_jobs_per_run: 20       # more new jobs than this are emailed without a score
   context_tokens: 16384      # room for CV + wishes + ad; Ollama's default (~2048) cuts long CVs
+  # What the model rates (1 to 4, one request either way); yojobs computes the score:
+  #   role       can you do the job (skills + experience + seniority)  strong/good/partial/weak
+  #   skills     technical and domain skills                           strong/good/partial/weak
+  #   seniority  leadership level, scope, team size                    strong/good/partial/weak
+  #   gaps       must-haves your CV doesn't show                        none/minor/some/major
+  #   wishes     fits cv/wishes.md (remote, culture, what you avoid)   matches/neutral/some conflict/conflicts
+  # Fit criteria are averaged; wishes multiplies (a conflict keeps the score low).
+  # cv/wishes.md is only used when `wishes` is in the list.
+  # Examples: [role, wishes]  ·  [skills, seniority, wishes]  ·  [role, skills, gaps, wishes]
+  criteria: [role, skills]
   timeout_seconds: 300
