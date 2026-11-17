@@ -17,7 +17,8 @@ import yaml
 
 from . import filter as jobfilter
 from . import mailer
-from .progress import say
+from . import progress
+from .progress import note, say, step
 from .schedule import RunLock, State, is_due, trim_log
 from .sources import SOURCES
 from .store import Store
@@ -59,7 +60,11 @@ def main(argv=None) -> int:
     ap.add_argument("--all", action="store_true", help="skip keyword filtering (debug)")
     ap.add_argument("--scheduled", action="store_true", help="launchd mode: --email only when a run is due")
     ap.add_argument("--check-schedule", action="store_true", help="only say whether a scheduled run is due")
+    ap.add_argument("-v", "--verbose", action="store_true",
+                    help="print every step on its own line (default: one status line)")
     args = ap.parse_args(argv)
+    # the launchd log is always verbose
+    progress.set_verbose(args.verbose or args.scheduled)
 
     cfg = load_config(args.config)
     store = Store(ROOT / cfg.get("database", "seen.sqlite"), key_days=cfg.get("dedupe_days", 60))
@@ -70,14 +75,14 @@ def main(argv=None) -> int:
     # (two runs at once could email the same jobs twice).
     lock = RunLock(ROOT / "yojobs.lock")
     if not lock.acquire():
-        say("Another yojobs run is in progress (manual or scheduled); try again when it has finished")
+        note("Another yojobs run is in progress (manual or scheduled); try again when it has finished")
         return 1
     try:
         if args.days is not None:
             days = args.days
         elif store.is_empty():
             days = cfg.get("first_run_days", 30)
-            say(f"First run (no jobs remembered yet): looking back {days:g} days instead of {cfg.get('max_age_days', 3):g}")
+            note(f"First run (no jobs remembered yet): looking back {days:g} days instead of {cfg.get('max_age_days', 3):g}")
         else:
             days = cfg.get("max_age_days", 3)
         code, _ok = run(args, cfg, store, days)
@@ -92,15 +97,15 @@ def scheduled(args, cfg: dict, store: Store) -> int:
     now = datetime.now()
     due, reason = is_due(cfg.get("schedule") or {}, state, now)
     if args.check_schedule or not due:
-        say(f"Scheduled run {'due' if due else 'not due'}: {reason}")
+        note(f"Scheduled run {'due' if due else 'not due'}: {reason}")
         return 0
 
     lock = RunLock(ROOT / "yojobs.lock")
     if not lock.acquire():
-        say("Another yojobs run is still in progress; skipping this one")
+        note("Another yojobs run is still in progress; skipping this one")
         return 0
     try:
-        say(f"Scheduled run starting ({reason})")
+        note(f"Scheduled run starting ({reason})")
         max_age = cfg.get("max_age_days", 3)
         if store.is_empty():
             days = cfg.get("first_run_days", 30)
@@ -114,9 +119,9 @@ def scheduled(args, cfg: dict, store: Store) -> int:
         code, ok = run(args, cfg, store, days)
         if ok:
             state.record_run(now)
-            say("Scheduled run finished and recorded")
+            note("Scheduled run finished and recorded")
         else:
-            say("Scheduled run failed (no source answered or email not sent); will retry next tick")
+            note("Scheduled run failed (no source answered or email not sent); will retry next tick")
         return code
     finally:
         lock.release()
@@ -135,7 +140,7 @@ def run(args, cfg: dict, store: Store, days: float):
         if not args.source and not scfg.get("enabled", True):
             continue
         if name not in SOURCES:
-            print(f"[!] unknown source in config: {name}", file=sys.stderr)
+            note(f"Unknown source in config: {name}")
             continue
         # sources with server-side search (e.g. himalayas) get search terms: a profile's
         # all_of words if it has any (every match must contain them), else its any_of words
@@ -149,12 +154,12 @@ def run(args, cfg: dict, store: Store, days: float):
     say(f"Checking {len(selected)} sources for jobs from the last {days:.3g} days")
     for i, (name, scfg) in enumerate(selected.items(), 1):
         t0 = time.time()
-        say(f"[{i}/{len(selected)}] {name}...")
+        step(f"[{i}/{len(selected)}] {name}")
         try:
             jobs = SOURCES[name](scfg, since)
         except Exception as exc:  # one broken portal must not stop the run
             stats.append((name, "ERROR", f"{type(exc).__name__}: {exc}"))
-            say(f"[{i}/{len(selected)}] {name}: ERROR {type(exc).__name__}: {exc}")
+            note(f"[{i}/{len(selected)}] {name}: ERROR {type(exc).__name__}: {exc}")
             continue
         recent = [j for j in jobs if j.published is None or j.published >= since]
         if args.all:
@@ -165,23 +170,24 @@ def run(args, cfg: dict, store: Store, days: float):
         stats.append((name, "ok", f"{len(jobs)} fetched, {len(recent)} from last {days:g} days, {len(kept)} matched ({time.time() - t0:.1f}s)"))
         say(f"[{i}/{len(selected)}] {name}: {len(kept)} matched ({time.time() - t0:.0f}s)")
 
+    progress.end()
     results.sort(key=lambda j: (j.score, j.published or since), reverse=True)
 
     new = store.filter_new(results)
-    say(f"{len(results)} matches, {len(new)} not sent before")
+    note(f"{len(results)} matches, {len(new)} not sent before")
     new_ids = {id(j) for j in new}
 
     all_failed = bool(stats) and all(s[1] == "ERROR" for s in stats)
     if args.email:
         if all_failed:
-            say("Every source failed (no internet?); nothing emailed")
+            note("Every source failed (no internet?); nothing emailed")
             return 1, False
         if new:
-            say(f"Sending email with {len(new)} jobs...")
+            note(f"Sending email with {len(new)} jobs...")
             try:
                 mailer.send(cfg.get("email") or {}, new, stats)
             except Exception as exc:
-                say(f"Email failed: {type(exc).__name__}: {exc}")
+                note(f"Email failed: {type(exc).__name__}: {exc}")
                 return 1, False  # jobs not marked as seen: they go out next time
             store.mark_seen(new)
         print(f"{datetime.now():%Y-%m-%d %H:%M} emailed {len(new)} new of {len(results)} matches")

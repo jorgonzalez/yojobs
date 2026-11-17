@@ -23,7 +23,7 @@ import time
 from datetime import datetime, timezone
 
 from ..models import Job, strip_html, to_utc
-from ..progress import say
+from ..progress import is_verbose, note, say
 from ..remote import remote_evidence
 
 _HOME_OFFICE_LOC = re.compile(r"\b(home\s?office|remote)\b", re.I)
@@ -52,7 +52,8 @@ def _location(raw: str) -> str:
 def fetch(cfg, since):
     from jobdrop import scrape_jobs, set_logger_level  # heavy import, only when enabled
 
-    set_logger_level(logging.WARNING)
+    # jobdrop warnings would break the one-line status display in quiet mode
+    set_logger_level(logging.WARNING if is_verbose() else logging.ERROR)
     country = cfg.get("country", "Germany")
     searches = cfg.get("searches") or []
     jobs = {}

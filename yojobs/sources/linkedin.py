@@ -17,13 +17,12 @@ from __future__ import annotations
 
 import logging
 import random
-import sys
 import time
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
 from ..models import Job, strip_html, to_utc
-from ..progress import say
+from ..progress import is_verbose, note, say
 from ..remote import remote_evidence
 
 
@@ -47,7 +46,8 @@ def fetch(cfg, since):
     from jobdrop.linkedin import LinkedIn
     from jobdrop.model import DescriptionFormat
 
-    set_logger_level(logging.WARNING)
+    # jobdrop warnings would break the one-line status display in quiet mode
+    set_logger_level(logging.WARNING if is_verbose() else logging.ERROR)
     hours_old = max(1, int((datetime.now(timezone.utc) - since).total_seconds() // 3600))
     title_ok = cfg.get("_title_ok") or (lambda job: True)
 
@@ -110,6 +110,6 @@ def fetch(cfg, since):
     if candidates:
         missing = sum(1 for j in candidates if not j.description)
         if missing:
-            print(f"[linkedin] {missing}/{len(candidates)} descriptions could not be fetched "
-                  f"(possibly rate-limited); those jobs can't pass the Kubernetes check", file=sys.stderr)
+            note(f"linkedin: {missing}/{len(candidates)} descriptions could not be fetched "
+                 f"(possibly rate-limited); those jobs can't pass the all_of check")
     return list(jobs.values())

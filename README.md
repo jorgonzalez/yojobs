@@ -49,7 +49,15 @@ Paste the App Password when asked (spaces are ignored). Use the same address as
 ```
 
 Preview mode prints matches sorted by score, then date, and marks jobs not emailed yet
-with `*`. Progress is printed to stderr while sources run; results go to stdout.
+with `*`.
+
+Progress goes to stderr; results go to stdout:
+- default: one status line, redrawn in place, showing the portal being checked and
+  what it's doing (`[3/15] himalayas · search: Kubernetes`). Only errors and the
+  summary get lines of their own.
+- `-v` / `--verbose`: every step on its own timestamped line (every search, page and
+  company board).
+- scheduled runs are always verbose, so `~/Library/Logs/yojobs.log` has the full detail.
 
 The first run (empty `seen.sqlite`) looks back `first_run_days` (30) instead of
 `max_age_days` (3).
