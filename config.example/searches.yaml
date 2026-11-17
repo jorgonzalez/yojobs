@@ -1,0 +1,18 @@
+# LinkedIn / Indeed searches: every term is searched in every place (places first,
+# so this example runs Berlin x 8 terms, then Germany-remote x 8 terms).
+# `remote: true` asks for remote jobs; the sites' remote filter is unreliable, so a
+# job only counts as remote if its title or ad clearly says so.
+# `only: [linkedin]` limits a group to one site (Indeed has no "European Union").
+# Each search is ~2 requests; keep the total moderate.
+searches:
+  - terms: [DevOps Manager, SRE Manager, Engineering Manager Infrastructure,
+            Engineering Manager Platform, Engineering Manager Cloud, Head of Platform,
+            Head of Infrastructure, Teamleiter DevOps]
+    places:
+      - {location: Berlin}                    # any work mode
+      - {location: Germany, remote: true}
+  - terms: [DevOps Manager, Site Reliability Engineering Manager, Platform Engineering Manager,
+            Infrastructure Engineering Manager]
+    places:
+      - {location: European Union, remote: true}
+    only: [linkedin]

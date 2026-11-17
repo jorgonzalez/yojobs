@@ -1,0 +1,53 @@
+# How yojobs runs: how far back to look, when to run, where to send the email.
+
+# Only keep jobs published within the last N days (decimals allowed, e.g. 0.5).
+# Scheduled runs automatically widen this to cover the time since the last run.
+max_age_days: 3
+# The very first run (nothing remembered yet) looks further back.
+first_run_days: 30
+
+# Automatic runs (macOS launchd; install with ./scripts/install-launchd.sh).
+# launchd checks every 30 minutes; a run happens only between earliest and latest,
+# at most max_runs_per_day, at least min_gap_hours apart. Missed runs are not
+# caught up and each day starts fresh.
+schedule:
+  earliest: "06:30"
+  latest: "22:00"
+  min_gap_hours: 5
+  max_runs_per_day: 3
+  # Examples:
+  #   once a day, in the morning:   {earliest: "07:00", latest: "12:00", max_runs_per_day: 1}
+  #   every 3 hours, office hours:  {earliest: "08:00", latest: "18:00", min_gap_hours: 3, max_runs_per_day: 4}
+
+# The password is NOT stored here: it is read from the macOS Keychain (service
+# "yojobs-smtp", account = username). For Gmail, enable 2-step verification,
+# create an App Password (myaccount.google.com/apppasswords), then run:
+#   security add-generic-password -U -s yojobs-smtp -a you@gmail.com -w
+# and paste the App Password when asked.
+email:
+  username: you@gmail.com     # account used to log in and send
+  to: you@gmail.com           # where alerts go (can be a different address)
+  # from: you@gmail.com       # optional, defaults to username
+  smtp_host: smtp.gmail.com
+  smtp_port: 465              # SSL
+  # Other providers (SSL on port 465), e.g. Fastmail: smtp_host: smtp.fastmail.com
+
+# Remembers jobs already emailed (git-ignored). A job's URL is never sent twice;
+# the same company + title (e.g. on another portal) is blocked for dedupe_days.
+database: seen.sqlite
+dedupe_days: 60
+
+# Once a week (with the first scheduled run on/after `day`) an extra email: runs,
+# jobs checked and emailed, a status table of every source, failing company boards,
+# and the "near misses": jobs that passed every rule except ad_must_mention
+# (e.g. a platform leadership job whose ad never says Kubernetes).
+# Preview it any time: python -m yojobs --weekly   (add --email to send it)
+weekly:
+  enabled: true
+  day: monday
+  near_misses: true
+
+# A source (or one company board) that errors or returns 0 jobs for this many runs
+# in a row (usually the site changed) triggers one warning email.
+health:
+  failed_runs: 3

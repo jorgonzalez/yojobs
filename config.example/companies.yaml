@@ -1,0 +1,27 @@
+# Company career pages, read through the hiring systems' official public job APIs.
+# Add a company under its system; the id is in its jobs page address:
+#   greenhouse  job-boards.greenhouse.io/<id>
+#   lever       jobs.lever.co/<id>
+#   ashby       jobs.ashbyhq.com/<id>
+#   personio    <id>.jobs.personio.de   (for .jobs.personio.com write <id>.com)
+#   recruitee   <id>.recruitee.com
+# A board that stops working is reported in the weekly email.
+companies:
+  greenhouse: [gitlab, grafanalabs, elastic, datadog, mongodb, canonical, vercel, cloudflare,
+               tailscale, chainguard, upbound, mattermost, cockroachlabs, planetscale, netlify,
+               honeycomb, circleci, jetbrains, neo4j, ionos, ghost, n26, contentful, hellofresh,
+               sumup, raisin, celonis, solarisbank, grover, wolt, bitpanda, gocardless, wise,
+               monzo, harnessinc, digitalocean98, fastly, newrelic, pagerduty, launchdarkly, jfrog,
+               platformsh, yugabyte, starburst, cribl, nebius, coreweave, nirmata, stacklok, tines,
+               bitwarden, buildkite, figma, adyen]
+  lever:      [sysdig, scaleway, toptal, agicap, spotify]
+  ashby:      [clickhouse, supabase, posthog, temporal, kong, weaviate, airbyte, sentry,
+               influxdata, tigerdata, doppler, zapier, buffer, oyster, camunda, miro, getyourguide,
+               n8n, upvest, pliant, taktile, parloa, enpal, trawa, lyceum, forto, choco, mimica,
+               snyk, render, railway, coder, kubermatic, redis, prefect, astronomer, anyscale,
+               modal, lambda, vanta, drata, 1password, docker, semgrep, linear, notion, tremendous,
+               elevenlabs, deepl, alephalpha, babbel, doctolib, qonto, alan, pennylane, mollie]
+  personio:   [syseleven, codecentric, qaware, tngtech, mayflower, tado, clark, mobimeo,
+               1komma5grad, thermondo, ottonova, westwing, studysmarter, everphone, penta, vivid,
+               smartbroker]
+  recruitee:  [inovex, gridscale, rebuy, bunq, ginmon]

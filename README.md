@@ -19,11 +19,27 @@ Runs on macOS (the Keychain and launchd are macOS-specific). Python 3.10+.
 ```sh
 python3.12 -m venv .venv               # Python 3.10+ (e.g. brew install python@3.12)
 .venv/bin/pip install -r requirements.txt
-cp config.example.yaml config.yaml     # then edit: email, sources, profiles
+cp -R config.example config            # then edit config/settings.yaml (email) and config/profile.yaml
 ```
 
-`config.yaml` is git-ignored: your email address and searches never go into the repo.
-`config.example.yaml` documents every option and contains example profiles.
+### Configuration (`config/`)
+
+| file | what's in it |
+|---|---|
+| `settings.yaml` | how yojobs runs: look-back, schedule, email, database, weekly summary, health |
+| `profile.yaml` | what you're looking for: title words, required and excluded words, places, languages |
+| `blocklist.yaml` | companies you never want to see |
+| `sources.yaml` | which portals are on/off, and their options |
+| `searches.yaml` | LinkedIn/Indeed search terms × places |
+| `companies.yaml` | company career pages, by hiring system |
+
+Every `.yaml` file in `config/` is read; the same setting in two files is an error.
+`config/` is git-ignored: your email address and searches never go into the repo.
+`config.example/` documents every option and has more example profiles.
+
+Older setups with a single `config.yaml` still work (used when there's no `config/`).
+To convert one: `.venv/bin/python -m yojobs --split-config` writes `config/` and checks
+that it loads to exactly the same configuration before keeping it.
 
 ### Email (Gmail)
 
@@ -35,7 +51,7 @@ security add-generic-password -U -s yojobs-smtp -a you@gmail.com -w
 ```
 
 Paste the App Password when asked (spaces are ignored). Use the same address as
-`email: username:` in `config.yaml`. The password lives only in the Keychain.
+`email: username:` in `config/settings.yaml`. The password lives only in the Keychain.
 
 ## Run
 
@@ -74,7 +90,7 @@ while one is going stops immediately with a message.
 ```
 
 launchd starts `yojobs --scheduled` every 30 minutes and once after login/wake.
-yojobs only runs (with `--email`) when due per `schedule:` in config.yaml:
+yojobs only runs (with `--email`) when due per `schedule:` in `config/settings.yaml`:
 between `earliest` and `latest`, at most `max_runs_per_day`, at least
 `min_gap_hours` apart. Missed runs are not caught up and each day starts fresh.
 Each run looks back to the previous run, so a weekend off loses nothing.
@@ -100,31 +116,33 @@ Safety:
 `~/Documents`): grant Python access in System Settings → Privacy & Security, or
 move the repo elsewhere and reinstall.
 
-## Search profiles (config.yaml → profiles)
+## Search profiles (`config/profile.yaml`)
 
 A job is reported if it passes **any** profile. Checks, in order:
 
 | key | meaning |
 |---|---|
-| `none_of` | drop the job if any of these appear (searched in `exclude_in`, default: `match_in`) |
-| `all_of` | every entry must appear (searched in `all_of_in`); `"a\|b"` = either word |
-| `onsite_cities` | on-site / hybrid jobs are kept only in these cities (any work mode is fine there) |
-| `remote_regions` | remote jobs must be open to one of these (e.g. Germany, Europe, Worldwide) or say plain "Remote"; empty = anywhere |
-| `groups` | named word lists; the `match_in` text needs one word from **each** group (AND between groups, OR inside) |
-| `any_of` | extra OR words; each distinct match adds +1 to the score |
-| `min_score` | if `any_of` is set, at least this many distinct matches |
+| `exclude_titles` | drop the job if any of these appear (searched in `exclude_in`, default: `match_in`); a list, or named groups of lists |
+| `ad_must_mention` | every entry must appear in the ad (searched in `ad_must_mention_in`); `"a\|b"` = either word |
+| `where: onsite_cities` | on-site / hybrid jobs are kept only in these cities (any work mode is fine there) |
+| `where: remote_regions` | remote jobs must be open to one of these (e.g. Germany, Europe, Worldwide) or say plain "Remote"; empty = anywhere |
+| `title_must_have` | named word lists; the `match_in` text needs one word from **each** group (AND between groups, OR inside) |
+| `title_any` | extra OR words; each distinct match adds +1 to the score |
+| `min_score` | at least this many distinct matches (groups + `title_any`) |
 | `match_in` | fields to match: `title`, `description`, `tags`, `company`, `location` |
 | `skip_ad_languages` | drop ads written in these languages, e.g. `[de]` (bilingual ads are kept) |
 | `skip_if_requires` | drop ads requiring fluency, e.g. `[German]` ("fluent German", "Deutsch C1"; not "German is a plus") |
 
 Matching is case-insensitive and whole-word; a space also matches a hyphen.
+The older key names (`groups`, `all_of`, `none_of`, `any_of`, `all_of_in`, and
+`onsite_cities` / `remote_regions` without `where:`) still work.
 
 To never hear from some companies (already applied, not interested), list them under
-`blocked_companies:` (top level of config.yaml). Case, spaces and legal suffixes are
+`blocked_companies:` in `config/blocklist.yaml`. Case, spaces and legal suffixes are
 ignored, so `GetYourGuide` also blocks "Get Your Guide GmbH". Blocked jobs are never
 emailed and never listed as near misses.
 
-Sources without job descriptions (marked below) can't check `all_of`: their jobs are
+Sources without job descriptions (marked below) can't check `ad_must_mention`: their jobs are
 kept and marked "<word> not verified" in the email.
 
 On-site / hybrid jobs get a work-mode hint next to the location, e.g.
@@ -136,7 +154,7 @@ gives a number of office days, that number decides: under 5 is hybrid, 5 is on-s
 For remote jobs the location means where you may live, so "Remote · Cork, Ireland"
 or "Remote, USA only" are dropped unless the region is allowed.
 
-See `config.example.yaml` for complete examples: a platform/infrastructure leadership
+See `config.example/profile.yaml` for complete examples: a platform/infrastructure leadership
 profile (active), a remote Python backend developer, data engineering in Munich, and
 frontend roles at specific companies.
 
@@ -144,11 +162,11 @@ frontend roles at specific companies.
 
 Real runs (`--email` and scheduled runs) keep a small history in `seen.sqlite`:
 
-- **Weekly summary** (`weekly:` in config.yaml): once a week, with the first scheduled
+- **Weekly summary** (`weekly:` in `config/settings.yaml`): once a week, with the first scheduled
   run on or after `day`, an extra email with runs, jobs checked and emailed, and a
   status table of every source. It's also how you know yojobs is still running.
 - **Near misses** (in the weekly email): jobs that passed every rule except the
-  required words (`all_of`), e.g. a platform leadership job whose ad never says
+  required words (`ad_must_mention`), e.g. a platform leadership job whose ad never says
   Kubernetes. Each is listed once; jobs already emailed as matches are left out.
 - **Source health** (`health:`): a source that errors or returns 0 jobs for
   `failed_runs` runs in a row (usually because the site changed) triggers one
@@ -173,7 +191,7 @@ Sr/Jr/Mgr.
 |---|---|---|
 | remotive | JSON API | max ~4 requests/day; public feed is 24h delayed and small |
 | remoteok | JSON API | latest ~100, mostly US-focused; terms: credit Remote OK + link to the job |
-| himalayas | JSON API | keyword search (one query per `all_of` word); rate-limited, ~2 min |
+| himalayas | JSON API | keyword search (one query per `ad_must_mention` word); rate-limited, ~2 min |
 | jobicy | JSON API | latest 100; optional `geo` |
 | weworkremotely | RSS | optional category feed `url` |
 | workingnomads | JSON | latest ~35 |
@@ -187,7 +205,7 @@ Sr/Jr/Mgr.
 | arbeitnow | JSON API | jobs in Germany (many Berlin, ~1/3 in German); 300 per page, ~20 s for 30 days |
 | berlinstartupjobs | RSS | teaser only; full page fetched for title matches |
 | welcometothejungle | sitemaps | job pages are bot-protected, so sitemap URLs only: Berlin jobs, no descriptions |
-| companies | Greenhouse / Lever / Ashby / Personio / Recruitee | company career pages, `boards:` as `"system:id"`; ~2 min for 137 companies |
+| companies | Greenhouse / Lever / Ashby / Personio / Recruitee | company career pages, listed in `config/companies.yaml`; ~2 min for 137 companies |
 | linkedin | jobdrop | searches in config; descriptions fetched only for title/location matches; ~10 min |
 | indeed | jobdrop | one Indeed country per config; descriptions included; fast |
 
@@ -199,15 +217,16 @@ Not supported: sites that block automated access (e.g. hiring.cafe, Wellfound).
 
 ### Adding a company
 
-Find its jobs page and use the id from the URL:
+Find its jobs page, take the id from the address, and add it to the right list in
+`config/companies.yaml`:
 
-| jobs page | config entry |
+| jobs page | list in companies.yaml |
 |---|---|
-| `job-boards.greenhouse.io/<id>` | `"greenhouse:<id>"` |
-| `jobs.lever.co/<id>` | `"lever:<id>"` |
-| `jobs.ashbyhq.com/<id>` | `"ashby:<id>"` |
-| `<id>.jobs.personio.de` | `"personio:<id>"` (`.jobs.personio.com` → `"personio:<id>.com"`) |
-| `<id>.recruitee.com` | `"recruitee:<id>"` |
+| `job-boards.greenhouse.io/<id>` | `greenhouse` |
+| `jobs.lever.co/<id>` | `lever` |
+| `jobs.ashbyhq.com/<id>` | `ashby` |
+| `<id>.jobs.personio.de` | `personio` (for `.jobs.personio.com` write `<id>.com`) |
+| `<id>.recruitee.com` | `recruitee` |
 
 SmartRecruiters and Workable aren't supported: SmartRecruiters' API robots.txt only
 allows LinkedIn's bot, and Workable rate-limits after a handful of requests.
@@ -215,7 +234,7 @@ allows LinkedIn's bot, and Workable rate-limits after a handful of requests.
 ### Adding a source
 
 Create `yojobs/sources/<name>.py` with `fetch(cfg, since) -> list[Job]`, register it
-in `yojobs/sources/__init__.py`, and add `<name>: {enabled: true}` under `sources:`.
+in `yojobs/sources/__init__.py`, and add `<name>: on` to `config/sources.yaml`.
 
 ## Tests
 
