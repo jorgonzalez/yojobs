@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 
@@ -24,7 +24,7 @@ WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", 
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
 
 @dataclass
@@ -36,6 +36,7 @@ class SourceRun:
     matched: int = 0
     seconds: float = 0.0
     error: str = ""
+    parts_failed: List[Tuple[str, str]] = field(default_factory=list)  # e.g. [("greenhouse:acme", "HTTPError: 404")]
 
 
 class History:
@@ -49,6 +50,9 @@ class History:
                CREATE TABLE IF NOT EXISTS near_misses (
                    url TEXT PRIMARY KEY, key TEXT, title TEXT, company TEXT, location TEXT,
                    source TEXT, published TEXT, reason TEXT, found_at TEXT NOT NULL, digested_at TEXT);
+               CREATE TABLE IF NOT EXISTS part_failures (
+                   run_at TEXT NOT NULL, source TEXT NOT NULL, part TEXT NOT NULL, error TEXT);
+               CREATE INDEX IF NOT EXISTS part_failures_src ON part_failures(source, part, run_at);
                CREATE TABLE IF NOT EXISTS meta (name TEXT PRIMARY KEY, value TEXT);""")
         db.commit()
 
@@ -69,8 +73,12 @@ class History:
         self.db.executemany(
             "INSERT INTO source_runs VALUES (?,?,?,?,?,?,?,?)",
             [(when, r.source, r.status, r.fetched, r.recent, r.matched, r.seconds, r.error) for r in runs])
-        self.db.execute("DELETE FROM source_runs WHERE run_at < ?",
-                        ((datetime.now(timezone.utc) - timedelta(days=90)).isoformat(),))
+        self.db.executemany(
+            "INSERT INTO part_failures VALUES (?,?,?,?)",
+            [(when, r.source, part, error) for r in runs for part, error in r.parts_failed])
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
+        self.db.execute("DELETE FROM source_runs WHERE run_at < ?", (cutoff,))
+        self.db.execute("DELETE FROM part_failures WHERE run_at < ?", (cutoff,))
         self.db.commit()
 
     def failing(self, source: str, failed_runs: int) -> Optional[str]:
@@ -87,8 +95,29 @@ class History:
             return f"returned no jobs in the last {failed_runs} runs (the site may have changed)"
         return None
 
+    def failing_parts(self, source: str, failed_runs: int) -> Dict[str, str]:
+        """Parts of a source (e.g. company boards) that failed in each of the
+        source's last `failed_runs` successful runs -> {part: last error}."""
+        runs = [r for (r,) in self.db.execute(
+            "SELECT run_at FROM source_runs WHERE source = ? AND status = 'ok' ORDER BY run_at DESC LIMIT ?",
+            (source, failed_runs))]
+        if len(runs) < failed_runs:
+            return {}
+        marks = ",".join("?" * len(runs))
+        rows = self.db.execute(
+            f"""SELECT part, COUNT(DISTINCT run_at), MAX(run_at) FROM part_failures
+                WHERE source = ? AND run_at IN ({marks}) GROUP BY part""", (source, *runs)).fetchall()
+        out = {}
+        for part, n, last in rows:
+            if n == len(runs):
+                err = self.db.execute("SELECT error FROM part_failures WHERE source = ? AND part = ? AND run_at = ?",
+                                      (source, part, last)).fetchone()[0]
+                out[part] = err
+        return out
+
     def health_changes(self, sources: List[str], failed_runs: int) -> Tuple[Dict[str, str], List[str]]:
-        """-> (newly broken {source: reason}, recovered [source]). 'Newly' = not
+        """-> (newly broken {name: reason}, recovered [name]). Names are sources
+        ("linkedin") or parts of one ("companies/greenhouse:acme"). 'Newly' = not
         warned about yet; call mark_alerted() once the warning email went out."""
         alerted = set(self.get("alerted_sources", []))
         broken, recovered = {}, []
@@ -98,6 +127,13 @@ class History:
                 broken[s] = why
             elif not why and s in alerted:
                 recovered.append(s)
+            parts = self.failing_parts(s, failed_runs)
+            for part, error in parts.items():
+                name = f"{s}/{part}"
+                if name not in alerted:
+                    broken[name] = (f"failed the last {failed_runs} runs ({error}); "
+                                    f"the board may have moved: check its jobs page and update the config")
+            recovered += [a for a in alerted if a.startswith(f"{s}/") and a.split("/", 1)[1] not in parts]
         return broken, recovered
 
     def mark_alerted(self, broken: List[str], recovered: List[str]) -> None:
@@ -167,5 +203,14 @@ class History:
                    FROM source_runs WHERE run_at >= ? GROUP BY source ORDER BY source""", (since,)):
             sources.append(dict(source=source, runs=n, errors=errors or 0, avg_fetched=round(avg_fetched or 0),
                                 matched=matched or 0, last_ok=last_ok))
+        parts = [dict(source=s, part=p, failed=n, last_error=e) for s, p, n, e in self.db.execute(
+            """SELECT f.source, f.part, COUNT(DISTINCT f.run_at),
+                      (SELECT error FROM part_failures g WHERE g.source = f.source AND g.part = f.part
+                       ORDER BY run_at DESC LIMIT 1)
+               FROM part_failures f WHERE f.run_at >= ? GROUP BY f.source, f.part ORDER BY f.source, f.part""",
+            (since,))]
+        runs_per_source = {s["source"]: s["runs"] - s["errors"] for s in sources}
+        for p in parts:
+            p["runs"] = runs_per_source.get(p["source"], p["failed"])
         return dict(runs=runs, emailed=emailed, jobs_per_run=round(per_run or 0), sources=sources,
-                    alerted=self.get("alerted_sources", []))
+                    parts=parts, alerted=self.get("alerted_sources", []))

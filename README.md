@@ -149,6 +149,10 @@ Real runs (`--email` and scheduled runs) keep a small history in `seen.sqlite`:
   `failed_runs` runs in a row (usually because the site changed) triggers one
   warning email, sent even when there are no new jobs. Runs where every source
   fails (no internet) don't count.
+- **Company boards** are checked one by one: a board that fails `failed_runs` runs
+  in a row (e.g. 404 because the company moved to another hiring system) triggers
+  one warning, and every board that failed during the week is listed in the weekly
+  email.
 
 ## Duplicates
 

@@ -181,6 +181,7 @@ def run(args, cfg: dict, store: Store, days: float):
     say(f"Checking {len(selected)} sources for jobs from the last {days:.3g} days")
     for i, (name, scfg) in enumerate(selected.items(), 1):
         t0 = time.time()
+        scfg["_problems"] = []  # parts of a source that failed (e.g. one company board)
         step(f"[{i}/{len(selected)}] {name}")
         try:
             jobs = SOURCES[name](scfg, since)
@@ -205,7 +206,8 @@ def run(args, cfg: dict, store: Store, days: float):
             if not jobfilter.is_remote(j):  # on-site / hybrid (e.g. Berlin): say how much office
                 j.work_hint = workmode.describe(j)
         results.extend(kept)
-        source_runs.append(SourceRun(name, "ok", len(jobs), len(recent), len(kept), time.time() - t0))
+        source_runs.append(SourceRun(name, "ok", len(jobs), len(recent), len(kept), time.time() - t0,
+                                     parts_failed=list(scfg["_problems"])))
         stats.append((name, "ok", f"{len(jobs)} fetched, {len(recent)} from last {days:g} days, {len(kept)} matched ({time.time() - t0:.1f}s)"))
         say(f"[{i}/{len(selected)}] {name}: {len(kept)} matched ({time.time() - t0:.0f}s)")
 

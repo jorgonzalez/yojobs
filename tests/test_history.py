@@ -1,6 +1,6 @@
 import tempfile
 import unittest
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from yojobs import filter as jf
@@ -55,6 +55,38 @@ class Health(Base):
     def test_needs_enough_history(self):
         self.runs(("ERROR", 0), ("ERROR", 0))
         self.assertEqual(self.h.health_changes(["linkedin"], 3), ({}, []))
+
+
+class BoardHealth(Base):
+    def board_runs(self, *failed_flags):
+        for i, failed in enumerate(failed_flags):
+            parts = [("greenhouse:gone", "HTTPError: HTTP Error 404: Not Found")] if failed else []
+            self.h.record([SourceRun("companies", "ok", 9000, parts_failed=parts)],
+                          when=f"2026-11-1{i}T08:00:00+00:00")
+
+    def test_board_failing_three_runs_warns_once(self):
+        self.board_runs(False, True, True, True)
+        broken, _ = self.h.health_changes(["companies"], 3)
+        self.assertEqual(list(broken), ["companies/greenhouse:gone"])
+        self.assertIn("404", broken["companies/greenhouse:gone"])
+        self.h.mark_alerted(list(broken), [])
+        self.assertEqual(self.h.health_changes(["companies"], 3), ({}, []))
+
+    def test_board_with_one_good_run_is_fine_and_recovers(self):
+        self.board_runs(True, True, True)
+        self.h.mark_alerted(["companies/greenhouse:gone"], [])
+        self.h.record([SourceRun("companies", "ok", 9000)], when="2026-11-17T08:00:00+00:00")
+        self.assertEqual(self.h.health_changes(["companies"], 3), ({}, ["companies/greenhouse:gone"]))
+
+    def test_weekly_lists_failing_boards(self):
+        now = datetime.now(timezone.utc)
+        for i in range(2):
+            self.h.record([SourceRun("companies", "ok", 9000, parts_failed=[("ashby:old", "HTTPError: 404")])],
+                          when=(now.replace(microsecond=0) - timedelta(hours=i)).isoformat())
+        subject, text, html, _ = weekly.build(self.h, {})
+        self.assertIn("1 failing board", subject)
+        self.assertIn("ashby:old", text)
+        self.assertIn("failed 2 of 2 runs", text)
 
 
 class Weekly(Base):

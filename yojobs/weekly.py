@@ -32,10 +32,12 @@ def build(history: History, cfg: dict) -> Tuple[str, str, str, List[str]]:
     near = history.pending_near_misses() if cfg.get("near_misses", True) else []
     alerted = set(st["alerted"])
     broken = [s for s in st["sources"] if s["source"] in alerted]
+    parts = st["parts"]
 
     subject = (f"yojobs weekly: {st['runs']} runs, {st['emailed']} jobs emailed"
                + (f", {len(near)} near misses" if near else "")
-               + (f", {len(broken)} source problem{'s' if len(broken) != 1 else ''}" if broken else ""))
+               + (f", {len(broken)} source problem{'s' if len(broken) != 1 else ''}" if broken else "")
+               + (f", {len(parts)} failing board{'s' if len(parts) != 1 else ''}" if parts else ""))
 
     # --- plain text ---
     t = [f"Last 7 days: {st['runs']} runs, ~{st['jobs_per_run']:,} jobs checked per run, "
@@ -48,6 +50,10 @@ def build(history: History, cfg: dict) -> Tuple[str, str, str, List[str]]:
             date = n["published"][:10] if n["published"] else "?"
             t += [f"- {n['title']} — {n['company']}", f"    {n['location'][:80]} · {n['source']} {date} · {n['reason']}",
                   f"    {n['url']}"]
+        t.append("")
+    if parts:
+        t += [f"Company boards that failed this week ({len(parts)}): check the jobs page, update or remove the entry:"]
+        t += [f"  {p['part']:32} failed {p['failed']} of {p['runs']} runs  ({p['last_error'][:70]})" for p in parts]
         t.append("")
     t += ["Sources:", f"  {'source':20} {'runs':>4} {'errors':>6} {'jobs/run':>8} {'matched':>7}  last good run"]
     for s in st["sources"]:
@@ -79,6 +85,12 @@ def build(history: History, cfg: dict) -> Tuple[str, str, str, List[str]]:
            f'<p style="font-size:12px;color:#666;margin:0 0 8px">Passed every rule except the required words. '
            f'Worth a look: recruiters often leave them out.</p><ul style="padding-left:18px">{near_html}</ul>'
            if near else "")
+        + (f'<h3 style="font-size:15px;margin:18px 0 4px">Company boards that failed this week ({len(parts)})</h3>'
+           f'<p style="font-size:12px;color:#666;margin:0 0 6px">Check the jobs page, then update or remove the '
+           f'entry in config.yaml.</p><ul style="font-size:12px;padding-left:18px">'
+           + "".join(f'<li><b>{e(p["part"])}</b>: failed {p["failed"]} of {p["runs"]} runs '
+                     f'<span style="color:#888">({e(p["last_error"][:90])})</span></li>' for p in parts)
+           + "</ul>" if parts else "")
         + '<h3 style="font-size:15px;margin:18px 0 4px">Sources</h3>'
         f'<table style="border-collapse:collapse"><tr><th {cell} align="left">source</th><th {cell}>runs</th>'
         f'<th {cell}>errors</th><th {cell}>jobs/run</th><th {cell}>matched</th><th {cell} align="left">last good run</th>'
