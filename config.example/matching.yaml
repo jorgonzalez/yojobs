@@ -1,0 +1,22 @@
+# Optional: a CV match score for each new job, computed by a local AI model through
+# Ollama (https://ollama.com). Nothing leaves your Mac. Off by default.
+#
+# Setup:
+#   1. Install Ollama and a model:   ollama pull gpt-oss:20b   (13 GB; needs ~16 GB RAM)
+#   2. Put your CV in cv/ (git-ignored) as cv.md, cv.txt, cv.docx or cv.pdf
+#      (PDF needs: .venv/bin/pip install pypdf). Optionally add cv/wishes.md:
+#      what you want and don't want (the score takes it into account).
+#   3. Set enabled: true below, then check:   .venv/bin/python -m yojobs --cv-check
+#
+# Only new jobs that are about to be emailed are scored (~20 s each on an M2), each
+# job once. The email shows "CV match 82% · strengths · gaps" and lists the best
+# matches first. The score never hides a job. If Ollama isn't running, the email
+# just has no scores.
+matching:
+  enabled: false
+  model: gpt-oss:20b
+  think: low                 # gpt-oss reasoning effort: low | medium | high (slower)
+  ollama_url: http://localhost:11434
+  cv_dir: cv
+  max_jobs_per_run: 20       # more new jobs than this are emailed without a score
+  timeout_seconds: 300

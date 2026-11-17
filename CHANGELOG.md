@@ -4,6 +4,16 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.8.0 — #9 [feat][matching] Optional CV match score from a local Ollama model
+- Off by default (`config/matching.yaml`). When enabled, each new job is compared with
+  your CV (`cv/`, git-ignored) and optional `cv/wishes.md` by a local model through
+  Ollama; nothing leaves the Mac.
+- The email shows "CV match 82% · strengths · gaps" and a one-line summary, best
+  matches first. Score only: no job is hidden.
+- Each job is scored once (cached per CV, wishes and model). If Ollama isn't running
+  or the CV is missing, the email just has no scores.
+- `--cv-check` shows the setup (CV file, wishes, Ollama, model).
+
 ## v0.7.0 — #8 [feat][config] Split the config into a config/ folder of small files
 - `config/`: settings, profile, blocklist, sources, searches and companies in separate
   files; the same key in two files is an error.

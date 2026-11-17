@@ -25,6 +25,7 @@ class Job:
     source_notes: List[str] = field(default_factory=list)  # e.g. "remote per description"
     work_mode: str = ""  # as stated by the source: "remote", "hybrid", "onsite" (or "")
     work_hint: str = ""  # shown next to the location, e.g. "hybrid · 2 office days/week"
+    match: Optional[dict] = None  # optional CV match: {score, strengths, gaps, summary}
 
 
     # Filled in by the filter step
