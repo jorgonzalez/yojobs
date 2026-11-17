@@ -1,50 +1,98 @@
-# Copy to config.yaml and edit. config.yaml is git-ignored.
+# yojobs example configuration
+# ----------------------------
+# Copy this file to config.yaml and edit it: cp config.example.yaml config.yaml
+# config.yaml is git-ignored, so your email address and searches stay private.
+#
+# The active settings below are one complete working setup: leadership roles in
+# platform / infrastructure, on-site in Berlin or remote in Europe. Lines starting
+# with "#" are alternatives you can uncomment. Duplicate keys are an error (yojobs
+# refuses to start rather than silently using one of them).
 
-# Only keep jobs published within the last N days.
+# ---------------------------------------------------------------------------
+# How far back to look
+# ---------------------------------------------------------------------------
+# Only keep jobs published within the last N days (decimals allowed, e.g. 0.5).
+# Scheduled runs automatically widen this to cover the time since the last run.
 max_age_days: 3
 # The very first run (nothing remembered yet) looks further back.
 first_run_days: 30
 
-# Automatic runs (launchd checks every 30 min; see scripts/install-launchd.sh).
-# A run happens only between earliest and latest, at most max_runs_per_day,
-# at least min_gap_hours apart. Missed runs are not caught up; each day starts fresh.
+# ---------------------------------------------------------------------------
+# Automatic runs (macOS launchd; install with ./scripts/install-launchd.sh)
+# ---------------------------------------------------------------------------
+# launchd checks every 30 minutes; a run happens only between earliest and
+# latest, at most max_runs_per_day, at least min_gap_hours apart. Missed runs are
+# not caught up and each day starts fresh.
 schedule:
   earliest: "06:30"
   latest: "22:00"
   min_gap_hours: 5
   max_runs_per_day: 3
+  # Examples:
+  #   once a day, in the morning:   {earliest: "07:00", latest: "12:00", max_runs_per_day: 1}
+  #   every 3 hours, office hours:  {earliest: "08:00", latest: "18:00", min_gap_hours: 3, max_runs_per_day: 4}
 
-# Email (Gmail SMTP). The password is NOT stored here: it is read from the macOS
-# Keychain. Create a Gmail App Password, then run:
-#   security add-generic-password -s yojobs-smtp -a you@gmail.com -w
+# ---------------------------------------------------------------------------
+# Email
+# ---------------------------------------------------------------------------
+# The password is NOT stored here: it is read from the macOS Keychain (service
+# "yojobs-smtp", account = username). For Gmail, enable 2-step verification,
+# create an App Password (myaccount.google.com/apppasswords), then run:
+#   security add-generic-password -U -s yojobs-smtp -a you@gmail.com -w
+# and paste the App Password when asked.
 email:
-  username: you@gmail.com     # Gmail account used to send
-  to: you@gmail.com           # where alerts go
+  username: you@gmail.com     # account used to log in and send
+  to: you@gmail.com           # where alerts go (can be a different address)
+  # from: you@gmail.com       # optional, defaults to username
   smtp_host: smtp.gmail.com
-  smtp_port: 465
+  smtp_port: 465              # SSL
+  # Other providers (SSL on port 465), e.g.:
+  #   Fastmail:  smtp_host: smtp.fastmail.com
+  #   iCloud:    use an app-specific password; iCloud needs STARTTLS on 587, which is not supported yet
 
+# ---------------------------------------------------------------------------
+# Duplicates
+# ---------------------------------------------------------------------------
 # Remembers jobs already emailed (git-ignored). A job's URL is never sent twice;
 # the same company + title (e.g. on another portal) is blocked for dedupe_days.
 database: seen.sqlite
 dedupe_days: 60
 
-# Portals. Set enabled: false to skip one. Extra keys are passed to the source.
+# ---------------------------------------------------------------------------
+# Sources (job portals)
+# ---------------------------------------------------------------------------
+# Set enabled: false to skip one. Run a single source while testing:
+#   python -m yojobs --source remotive --days 7
 sources:
+  # Remote-only boards
   remotive:       {enabled: true}   # max ~4 runs/day per Remotive's terms
-  himalayas:      {enabled: true, max_pages: 20}  # pages of 20 per keyword; stops early once jobs are older than the window
-  jobicy:         {enabled: true, count: 100}   # optional: geo: europe
+  himalayas:      {enabled: true, max_pages: 20}
+    # searches each required keyword (all_of) and stops once jobs are older than
+    # the window; mode: browse reads the general feed instead (slower, fewer hits)
+  jobicy:         {enabled: true, count: 100}
+    # optional region filter on Jobicy's side, e.g. geo: europe | germany | usa
   weworkremotely: {enabled: true}
+    # optional: one category feed instead of all jobs, e.g.
+    # url: https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss
   workingnomads:  {enabled: true}
-  landingjobs:    {enabled: true, max_pages: 6}
-  4dayweek:       {enabled: true}
-  startupmap:     {enabled: true}   # no descriptions: Kubernetes marked 'not verified'
-  berlinstartupjobs: {enabled: true}
-  welcometothejungle: {enabled: true}  # sitemaps only (job pages are bot-protected): Berlin jobs, Kubernetes not verified
   euremotejobs:   {enabled: true}   # homepage (latest ~60); job pages opened only for matches
-  hackernews:     {enabled: true, threads: 2}   # monthly 'Who is hiring?' threads (latest 2)
+    # delay_seconds: 3              # pause between job pages (be polite)
+  hackernews:     {enabled: true, threads: 2}   # monthly "Who is hiring?" threads (latest 2)
+
+  # Europe / startups
+  landingjobs:    {enabled: true, max_pages: 6}
+  4dayweek:       {enabled: true}   # no descriptions: all_of words marked 'not verified'
+  startupmap:     {enabled: true}   # Berlin startup map; no descriptions
+  berlinstartupjobs: {enabled: true}
+    # feeds: [https://berlinstartupjobs.com/engineering/feed/]   # default: engineering + all jobs
+  welcometothejungle: {enabled: true}  # sitemaps only (job pages are bot-protected): Berlin jobs, no descriptions
+
   # Company career pages via the official Greenhouse / Lever / Ashby job APIs.
-  # Add a company as "<system>:<board id>" (the id is in its jobs page URL, e.g.
-  # job-boards.greenhouse.io/<id>, jobs.lever.co/<id>, jobs.ashbyhq.com/<id>).
+  # Add a company as "<system>:<board id>"; the id is in its jobs page URL:
+  #   job-boards.greenhouse.io/<id>  ->  "greenhouse:<id>"
+  #   jobs.lever.co/<id>             ->  "lever:<id>"
+  #   jobs.ashbyhq.com/<id>          ->  "ashby:<id>"
+  # A board that doesn't exist (or moved) is reported in the output and skipped.
   companies:
     enabled: true
     boards: [
@@ -67,8 +115,12 @@ sources:
       "greenhouse:wolt", "greenhouse:bitpanda", "greenhouse:gocardless", "greenhouse:wise",
       "greenhouse:monzo", "lever:agicap", "ashby:mimica",
     ]
+
   # LinkedIn via jobdrop (no account used). Each search = ~2 requests; descriptions
-  # are fetched only for jobs whose title + location already match.
+  # are fetched only for jobs whose title + location already match a profile.
+  # LinkedIn's remote filter is unreliable: a job only counts as remote if its
+  # title/description says so (see yojobs/remote.py).
+  # Keep the number of searches moderate: LinkedIn rate-limits heavy use.
   linkedin:
     enabled: true
     results_per_search: 50
@@ -82,8 +134,7 @@ sources:
       - {term: "Head of Platform", location: Berlin}
       - {term: "Head of Infrastructure", location: Berlin}
       - {term: "Teamleiter DevOps", location: Berlin}
-      # Remote within Germany. LinkedIn also returns on-site jobs here; a job only
-      # counts as remote if its title/description says so (see sources/linkedin.py)
+      # Remote within Germany
       - {term: "DevOps Manager", location: Germany, remote: true}
       - {term: "SRE Manager", location: Germany, remote: true}
       - {term: "Engineering Manager Infrastructure", location: Germany, remote: true}
@@ -97,8 +148,13 @@ sources:
       - {term: "Site Reliability Engineering Manager", location: European Union, remote: true}
       - {term: "Platform Engineering Manager", location: European Union, remote: true}
       - {term: "Infrastructure Engineering Manager", location: European Union, remote: true}
-  # Indeed Germany via jobdrop. Fast (descriptions included). Outside Berlin a job
-  # only counts as remote if its location/title/description clearly says so.
+      # Other examples:
+      # - {term: "Backend Engineer Python", location: Amsterdam}
+      # - {term: "Data Engineer", location: "Munich, Bavaria, Germany"}
+      # - {term: "Frontend Developer", location: Spain, remote: true}
+
+  # Indeed via jobdrop. Fast (descriptions included). Indeed is per country:
+  # country is the Indeed site to use (Germany, Netherlands, Spain, France, UK, USA, ...).
   indeed:
     enabled: true
     country: Germany
@@ -123,11 +179,23 @@ sources:
       - {term: "Head of Infrastructure", location: Germany, remote: true}
       - {term: "Teamleiter DevOps", location: Germany, remote: true}
 
-# Search profiles. A job is reported if it passes ANY profile.
+# ---------------------------------------------------------------------------
+# Search profiles: what counts as a match
+# ---------------------------------------------------------------------------
+# A job is reported if it passes ANY profile. Checks, in order:
+#   1. none_of     - drop the job if any of these words appear (in exclude_in)
+#   2. all_of      - every entry must appear (in all_of_in); "a|b" = either word.
+#                    Sources without descriptions can't be checked: the job is kept
+#                    and marked "<word> not verified" in the email.
+#   3. place       - onsite_cities / remote_regions (see below)
+#   4. groups      - the title (match_in) needs at least one word from EACH group:
+#                    AND between groups, OR inside a group
+#   5. any_of      - optional extra words; if set, at least min_score must match
+# Words match whole words, case-insensitively; a space also matches a hyphen
+# ("Site Reliability" matches "Site-Reliability"). Fields you can search:
+# title, description, tags, company, location.
 profiles:
   - name: platform-leadership
-    # The title must match at least one word from EACH group (AND between groups,
-    # OR inside a group). Every distinct match adds +1 to the score.
     groups:
       role:   # leadership roles only, no individual-contributor titles
         - Manager
@@ -153,19 +221,50 @@ profiles:
         - Cloud
         - GCP
         - Kubernetes
-    # Extra OR keywords that only add to the score (optional).
     any_of: []
-    # AND keywords: all must appear (searched in title, description and tags).
-    all_of: ["Kubernetes|K8s"]   # "a|b" = either word
+    all_of: ["Kubernetes|K8s"]
     all_of_in: [title, description, tags]
-    # Exclude jobs whose title contains any of these (see exclude_in).
     none_of: [Account Executive, Product Manager, Head of Product, Growth, Sales, Marketing, Project Manager, Program Manager, Programme Manager, Procurement]
     exclude_in: [title]
     match_in: [title]          # add description / tags for wider (noisier) matching
     min_score: 1
     # Where you can work:
-    #  - on-site / hybrid jobs: only in these cities
+    #  - on-site / hybrid jobs: only in these cities (any work mode is fine there)
     onsite_cities: [Berlin]
     #  - remote jobs: the location (= where you may live) must mention one of these,
     #    or be plain "Remote". "Remote, Ireland" or "USA only" are dropped.
+    #    An empty list accepts remote jobs from anywhere.
     remote_regions: [Germany, Deutschland, Europe, European, EU, EMEA, CET, Worldwide, Anywhere, Global]
+
+  # --- More example profiles (uncomment and adapt) ---------------------------
+
+  # Remote Python backend developer, anywhere in Europe. No groups: the title
+  # just needs at least 2 of the any_of words (e.g. "Senior Python Backend Engineer").
+  # - name: python-backend
+  #   any_of: [Python, Django, FastAPI, Backend, Back End, Engineer, Developer]
+  #   min_score: 2
+  #   match_in: [title]
+  #   none_of: [Junior, Intern, Werkstudent, Manager, Sales]
+  #   exclude_in: [title]
+  #   remote_regions: [Europe, EU, EMEA, CET, Worldwide, Anywhere]
+
+  # Data engineering in Munich (on-site/hybrid) or remote within Germany only.
+  # Requires both a cloud and a pipeline tool somewhere in the ad.
+  # - name: data-engineering-munich
+  #   groups:
+  #     level: [Senior, Lead, Staff, Principal]
+  #     area:  [Data Engineer, Analytics Engineer, Data Platform]
+  #   all_of: ["AWS|GCP|Azure", "Spark|dbt|Airflow"]
+  #   all_of_in: [description, tags]
+  #   none_of: [Data Scientist, Werkstudent, Praktikum]
+  #   exclude_in: [title]
+  #   onsite_cities: [München, Munich]
+  #   remote_regions: [Germany, Deutschland]
+
+  # Frontend roles, fully remote from anywhere, at specific companies only.
+  # - name: frontend-dream-companies
+  #   groups:
+  #     area: [Frontend, Front End, React, TypeScript]
+  #     company: [Vercel, Supabase, PostHog, Sentry]
+  #   match_in: [title, company]
+  #   remote_regions: []
