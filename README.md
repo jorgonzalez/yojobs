@@ -178,6 +178,8 @@ Sr/Jr/Mgr.
 | weworkremotely | RSS | optional category feed `url` |
 | workingnomads | JSON | latest ~35 |
 | euremotejobs | homepage HTML | feed/API disabled by owner; latest ~60 jobs; job page opened only for matches |
+| euroremotejobs | WP Job Manager feed | euroremotejobs.com (not euremotejobs): newest 100 jobs per run |
+| jobspresso | WP Job Manager feed | only the newest 10 per run (robots.txt disallows feed URLs with `?`) |
 | hackernews | HN Search API | monthly "Who is hiring?" threads (latest 2); first line `Company \| Role \| Location \| REMOTE (EU)` parsed |
 | landingjobs | JSON API | EU tech, many on-site/hybrid |
 | 4dayweek | RSS | titles only, no descriptions |
