@@ -35,6 +35,9 @@ DEFAULTS = {
     "think": "low",            # gpt-oss reasoning effort: low is ~20 s per job on an M2 and good enough
     "timeout_seconds": 300,
     "max_jobs_per_run": 20,    # more new jobs than this are emailed without a score
+    # Room for CV + wishes + ad + answer. Ollama's default can be as low as 2048 tokens,
+    # which silently cuts the prompt (a ~1,000-word CV plus an ad is ~4,500 tokens).
+    "context_tokens": 16384,
 }
 CV_NAMES = ["cv.md", "cv.txt", "cv.docx", "cv.pdf"]
 CV_SUFFIXES = (".md", ".txt", ".docx", ".pdf")
@@ -135,11 +138,15 @@ def ask(s: dict, cv: str, wishes: str, job: Job) -> dict:
     prompt = PROMPT.format(cv=cv, wishes=wishes or "(none given)", title=job.title, company=job.company,
                            location=job.location, description=job.description[:12000])
     body = {"model": s["model"], "messages": [{"role": "user", "content": prompt}], "stream": False,
-            "format": SCHEMA, "options": {"temperature": 0}}
+            "format": SCHEMA, "options": {"temperature": 0, "num_ctx": int(s["context_tokens"])}}
     if s.get("think"):
         body["think"] = s["think"]
     out = _post(s["ollama_url"].rstrip("/") + "/api/chat", body, float(s["timeout_seconds"]))
-    result = json.loads(out["message"]["content"])
+    content = (out.get("message") or {}).get("content") or ""
+    if not content.strip():
+        raise RuntimeError(f"the model returned no answer (done_reason: {out.get('done_reason', '?')}); "
+                           f"if the prompt was cut off, raise context_tokens in config/matching.yaml")
+    result = json.loads(content)
     result["score"] = max(0, min(100, int(result["score"])))
     return {k: result.get(k) for k in ("score", "strengths", "gaps", "summary")}
 

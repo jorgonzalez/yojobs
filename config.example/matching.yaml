@@ -21,4 +21,5 @@ matching:
   ollama_url: http://localhost:11434
   cv_dir: cv
   max_jobs_per_run: 20       # more new jobs than this are emailed without a score
+  context_tokens: 16384      # room for CV + wishes + ad; Ollama's default (~2048) cuts long CVs
   timeout_seconds: 300
