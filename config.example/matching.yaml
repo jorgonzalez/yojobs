@@ -3,7 +3,7 @@
 #
 # Setup:
 #   1. Install Ollama and a model:   ollama pull gpt-oss:20b   (13 GB; needs ~16 GB RAM)
-#   2. Put your CV in cv/ (git-ignored) as cv.md, cv.txt, cv.docx or cv.pdf
+#   2. Put your CV in cv/ (git-ignored): a .md, .txt, .docx or .pdf file (any name)
 #      (PDF needs: .venv/bin/pip install pypdf). Optionally add cv/wishes.md:
 #      what you want and don't want (the score takes it into account).
 #   3. Set enabled: true below, then check:   .venv/bin/python -m yojobs --cv-check

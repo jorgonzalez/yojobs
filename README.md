@@ -184,7 +184,7 @@ yojobs can rate each new job against your CV with a local AI model through
 [Ollama](https://ollama.com), so nothing leaves your Mac. It's off by default.
 
 1. Install Ollama and a model: `ollama pull gpt-oss:20b` (13 GB; ~16 GB RAM needed)
-2. Put your CV in `cv/` (git-ignored) as `cv.md`, `cv.txt`, `cv.docx` or `cv.pdf`
+2. Put your CV in `cv/` (git-ignored) as a `.md`, `.txt`, `.docx` or `.pdf` file (any name)
    (PDF needs `.venv/bin/pip install pypdf`). Optionally add `cv/wishes.md`: what you
    want and don't want; the score takes it into account.
 3. Set `enabled: true` in `config/matching.yaml`, then check the setup:

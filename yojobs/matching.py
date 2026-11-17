@@ -6,7 +6,8 @@ per CV + wishes + model, so a job is scored again only if one of those changes.
 The score only informs and sorts the email; it never hides a job.
 
 cv/ (git-ignored):
-  cv.md / cv.txt / cv.docx / cv.pdf   your CV (the first one found, in that order)
+  your CV, any name: cv.md / cv.txt / cv.docx / cv.pdf are used first; otherwise the
+  newest .md / .txt / .docx / .pdf file in the folder (e.g. "CV_Name_2026.pdf")
   wishes.md                           optional: what you want and don't want
 
 Check the setup:  python -m yojobs --cv-check
@@ -36,6 +37,7 @@ DEFAULTS = {
     "max_jobs_per_run": 20,    # more new jobs than this are emailed without a score
 }
 CV_NAMES = ["cv.md", "cv.txt", "cv.docx", "cv.pdf"]
+CV_SUFFIXES = (".md", ".txt", ".docx", ".pdf")
 PROMPT_VERSION = 2  # bump when the prompt changes, so cached scores are recomputed
 
 SCHEMA = {"type": "object", "required": ["score", "strengths", "gaps", "summary"], "properties": {
@@ -101,6 +103,10 @@ def load_cv(root: Path, s: dict) -> Tuple[Optional[Path], str, str]:
     """-> (CV file, CV text, wishes text); file is None when there's no CV."""
     folder = root / s["cv_dir"]
     cv_file = next((folder / n for n in CV_NAMES if (folder / n).exists()), None)
+    if not cv_file and folder.is_dir():  # any name: the newest CV-like file
+        others = [f for f in folder.iterdir() if f.is_file() and f.suffix.lower() in CV_SUFFIXES
+                  and f.name.lower() != "wishes.md" and not f.name.startswith(".")]
+        cv_file = max(others, key=lambda f: f.stat().st_mtime, default=None)
     if not cv_file:
         return None, "", ""
     wishes_file = folder / "wishes.md"
@@ -176,7 +182,7 @@ def score_jobs(jobs: List[Job], cfg: dict, root: Path, db: sqlite3.Connection) -
         note(f"CV match: can't read the CV ({exc}); no scores this run")
         return
     if not cv_file:
-        note(f"CV match is enabled but there's no CV in {s['cv_dir']}/ ({', '.join(CV_NAMES)}); no scores")
+        note(f"CV match is enabled but there's no CV (.md/.txt/.docx/.pdf) in {s['cv_dir']}/; no scores")
         return
     models = ollama_models(s)
     if models is None:

@@ -116,5 +116,16 @@ class CvFiles(Base):
         self.assertEqual((f.name, text, wishes), ("cv.md", "markdown cv", ""))
 
 
+    def test_any_file_name(self):
+        import os
+        (self.root / "cv").mkdir()
+        (self.root / "cv" / "wishes.md").write_text("wishes")
+        (self.root / "cv" / ".DS_Store").write_text("junk")
+        old, new = self.root / "cv" / "Old_CV.txt", self.root / "cv" / "CV_Name_2026.txt"
+        old.write_text("old"); new.write_text("new")
+        os.utime(old, (1, 1))
+        f, text, wishes = matching.load_cv(self.root, matching.settings(ROOT_CFG))
+        self.assertEqual((f.name, text, wishes), ("CV_Name_2026.txt", "new", "wishes"))
+
 if __name__ == "__main__":
     unittest.main()
