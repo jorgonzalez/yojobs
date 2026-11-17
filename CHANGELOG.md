@@ -4,6 +4,15 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.9.0 — #10 [feat][matching] Login question and Desktop icon to start/stop Ollama
+- `scripts/install-ollama-prompt.sh`: after every login, asks "Start Ollama for the
+  yojobs CV match?" (closes by itself after 2 minutes; skipped if Ollama is running).
+  Remove with `scripts/uninstall-ollama-prompt.sh`.
+- `scripts/make-ollama-app.sh`: creates an "Ollama" app on the Desktop that shows
+  whether Ollama is running and starts or stops it with a double-click.
+- `scripts/ollama-ctl.sh status|start|stop`, shared by both; logs to
+  `~/Library/Logs/ollama.log`.
+
 ## v0.8.0 — #9 [feat][matching] Optional CV match score from a local Ollama model
 - Off by default (`config/matching.yaml`). When enabled, each new job is compared with
   your CV (`cv/`, git-ignored) and optional `cv/wishes.md` by a local model through

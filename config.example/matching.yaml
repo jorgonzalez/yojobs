@@ -7,6 +7,8 @@
 #      (PDF needs: .venv/bin/pip install pypdf). Optionally add cv/wishes.md:
 #      what you want and don't want (the score takes it into account).
 #   3. Set enabled: true below, then check:   .venv/bin/python -m yojobs --cv-check
+#   4. Optional: ./scripts/install-ollama-prompt.sh (asks at login whether to start Ollama)
+#      and ./scripts/make-ollama-app.sh (Desktop icon to start/stop it)
 #
 # Only new jobs that are about to be emailed are scored (~20 s each on an M2), each
 # job once. The email shows "CV match 82% · strengths · gaps" and lists the best
