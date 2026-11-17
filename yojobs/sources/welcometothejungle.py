@@ -42,8 +42,18 @@ def _job(loc: str, lastmod: str):
         return None
     company_slug, slug = m.groups()
     parts = slug.split("_")
-    title_slug = parts[0]
-    city_slug = parts[1] if len(parts) >= 3 else ""  # <title>_<city>_<id>; some have no city
+    # URL forms seen in the sitemaps:
+    #   <title>_<city>                 (most common)
+    #   <title>_<city>_<id>
+    #   <title>_<city>_<ats>_<id>      (the title itself may contain "_")
+    #   <uuid>                         (no title or city: skipped)
+    if len(parts) < 2:
+        return None
+    if len(parts) <= 3:
+        title_slug, city_slug = parts[0], parts[1]
+    else:
+        title_slug, city_slug = "_".join(parts[:-3]), parts[-3]
+    title_slug = title_slug.replace("_", "-").strip("-")
     return Job(
         source="welcometothejungle",
         title=_words(title_slug),
@@ -52,7 +62,10 @@ def _job(loc: str, lastmod: str):
         location=_words(city_slug),
         published=parse_iso(lastmod),  # last update of the listing, not first posting
         has_description=False,
-        remote=None,  # unknown without opening the (bot-protected) job page
+        # Work mode unknown without opening the (bot-protected) job page: treat as
+        # on-site, so only jobs in onsite_cities (Berlin) pass. Never "remote", or an
+        # unparsed location would let e.g. a San Francisco job through.
+        remote=False,
     )
 
 

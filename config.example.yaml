@@ -266,7 +266,9 @@ profiles:
     any_of: []
     all_of: ["Kubernetes|K8s"]
     all_of_in: [title, description, tags]
-    none_of: [Account Executive, Product Manager, Head of Product, Growth, Sales, Marketing, Project Manager, Program Manager, Programme Manager, Procurement, Partner Manager, Alliances, Partnerships]
+    none_of: [Account Executive, Product Manager, Head of Product, Growth, Sales, Marketing, Project Manager, Program Manager, Programme Manager, Procurement, Partner Manager, Alliances, Partnerships,
+              # corporate IT as the main job (IT as a side part, e.g. "Platform and IT Compliance", is fine)
+              Director of IT, Head of IT, VP of IT, IT Director, IT Manager, IT Operations, IT Infrastructure, IT Security, Corporate IT, Corporate Security, IT Support, Service Desk, Workplace, IT Leiter, Leiter IT, IT Leitung, Leitung IT]
     exclude_in: [title]
     match_in: [title]          # add description / tags for wider (noisier) matching
     min_score: 1
