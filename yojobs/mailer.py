@@ -42,9 +42,12 @@ def _short(s: str, n: int = 90) -> str:
     return s if len(s) <= n else s[: n - 3] + "..."
 
 
-def render(jobs: List[Job], stats: Sequence[Tuple[str, str, str]]) -> Tuple[str, str]:
+def render(jobs: List[Job], stats: Sequence[Tuple[str, str, str]],
+           warnings: Sequence[str] = ()) -> Tuple[str, str]:
     """Return (plain_text, html) bodies."""
     lines, rows = [], []
+    if warnings:
+        lines += ["Source warnings:"] + [f"  ! {w}" for w in warnings] + [""]
     for j in jobs:
         date = j.published.strftime("%d %b") if j.published else ""
         place = _short(j.location, 60) + (f" ({j.work_hint})" if j.work_hint else "")
@@ -69,24 +72,37 @@ def render(jobs: List[Job], stats: Sequence[Tuple[str, str, str]]) -> Tuple[str,
         lines.append("Source problems:")
         lines += [f"  {n}: {m}" for n, m in problems]
     footer = "".join(f"<li>{html.escape(n)}: {html.escape(m)}</li>" for n, m in problems)
+    warn_html = "".join(f"<li>{html.escape(w)}</li>" for w in warnings)
     html_body = (
         '<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:680px">'
-        f'<table style="border-collapse:collapse;width:100%">{"".join(rows)}</table>'
+        + (f'<div style="background:#fff7ed;border:1px solid #fdba74;border-radius:6px;padding:8px 12px;'
+           f'margin-bottom:12px;font-size:13px;color:#9a3412"><b>Source warnings</b><ul style="margin:4px 0">'
+           f'{warn_html}</ul></div>' if warnings else "")
+        + f'<table style="border-collapse:collapse;width:100%">{"".join(rows)}</table>'
         + (f'<p style="font-size:12px;color:#b00">Source problems:</p><ul style="font-size:12px;color:#b00">{footer}</ul>' if problems else "")
         + "</div>"
     )
     return "\n".join(lines), html_body
 
 
-def send(cfg: dict, jobs: List[Job], stats) -> None:
-    user = cfg["username"]
-    to = cfg.get("to") or user
+def send(cfg: dict, jobs: List[Job], stats, warnings: Sequence[str] = ()) -> None:
+    """The alert email: new jobs, plus source warnings if any (it can be sent
+    with warnings only, when a source broke but no new jobs were found)."""
     top = jobs[0].title if jobs else ""
+    if jobs:
+        subject = f"yojobs: {len(jobs)} new job{'s' if len(jobs) != 1 else ''}" + (f" — {_short(top, 60)}" if top else "")
+    else:
+        subject = f"yojobs: source problem ({len(warnings)})"
+    text, html_body = render(jobs, stats, warnings)
+    deliver(cfg, subject, text, html_body)
+
+
+def deliver(cfg: dict, subject: str, text: str, html_body: str) -> None:
+    user = cfg["username"]
     msg = EmailMessage()
-    msg["Subject"] = f"yojobs: {len(jobs)} new job{'s' if len(jobs) != 1 else ''}" + (f" — {_short(top, 60)}" if top else "")
+    msg["Subject"] = subject
     msg["From"] = cfg.get("from") or user
-    msg["To"] = to
-    text, html_body = render(jobs, stats)
+    msg["To"] = cfg.get("to") or user
     msg.set_content(text)
     msg.add_alternative(html_body, subtype="html")
 

@@ -16,7 +16,8 @@ from pathlib import Path
 import yaml
 
 from . import filter as jobfilter
-from . import mailer, workmode
+from . import mailer, weekly, workmode
+from .history import History, SourceRun
 from . import progress
 from .progress import note, say, step
 from .schedule import RunLock, State, is_due, trim_log
@@ -60,6 +61,8 @@ def main(argv=None) -> int:
     ap.add_argument("--all", action="store_true", help="skip keyword filtering (debug)")
     ap.add_argument("--scheduled", action="store_true", help="launchd mode: --email only when a run is due")
     ap.add_argument("--check-schedule", action="store_true", help="only say whether a scheduled run is due")
+    ap.add_argument("--weekly", action="store_true",
+                    help="build the weekly summary now (print it; with --email, send it)")
     ap.add_argument("-v", "--verbose", action="store_true",
                     help="print every step on its own line (default: one status line)")
     args = ap.parse_args(argv)
@@ -78,6 +81,8 @@ def main(argv=None) -> int:
         note("Another yojobs run is in progress (manual or scheduled); try again when it has finished")
         return 1
     try:
+        if args.weekly:
+            return send_weekly(args, cfg, store)
         if args.days is not None:
             days = args.days
         elif store.is_empty():
@@ -120,11 +125,33 @@ def scheduled(args, cfg: dict, store: Store) -> int:
         if ok:
             state.record_run(now)
             note("Scheduled run finished and recorded")
+            weekly_cfg = cfg.get("weekly") or {}
+            if History(store.db).weekly_due(weekly_cfg, now.date()):
+                args.email = True
+                send_weekly(args, cfg, store)  # a failure here is retried on the next run
         else:
             note("Scheduled run failed (no source answered or email not sent); will retry next tick")
         return code
     finally:
         lock.release()
+
+
+def send_weekly(args, cfg: dict, store: Store) -> int:
+    history = History(store.db)
+    weekly_cfg = cfg.get("weekly") or {}
+    subject, text, html_body, urls = weekly.build(history, weekly_cfg)
+    if not args.email:
+        print(subject + "\n\n" + text)
+        return 0
+    note(f"Sending the weekly summary ({len(urls)} near misses)...")
+    try:
+        mailer.deliver(cfg.get("email") or {}, subject, text, html_body)
+    except Exception as exc:
+        note(f"Weekly email failed: {type(exc).__name__}: {exc}")
+        return 1
+    history.mark_digested(urls)
+    history.mark_weekly_sent(datetime.now().date())
+    return 0
 
 
 def run(args, cfg: dict, store: Store, days: float):
@@ -150,7 +177,7 @@ def run(args, cfg: dict, store: Store, days: float):
                     _title_ok=lambda job: any(jobfilter.title_ok(job, p) for p in profiles))
         selected[name] = scfg
 
-    results, stats = [], []
+    results, stats, source_runs, near = [], [], [], []
     say(f"Checking {len(selected)} sources for jobs from the last {days:.3g} days")
     for i, (name, scfg) in enumerate(selected.items(), 1):
         t0 = time.time()
@@ -159,6 +186,7 @@ def run(args, cfg: dict, store: Store, days: float):
             jobs = SOURCES[name](scfg, since)
         except Exception as exc:  # one broken portal must not stop the run
             stats.append((name, "ERROR", f"{type(exc).__name__}: {exc}"))
+            source_runs.append(SourceRun(name, "ERROR", seconds=time.time() - t0, error=f"{type(exc).__name__}: {exc}"[:300]))
             note(f"[{i}/{len(selected)}] {name}: ERROR {type(exc).__name__}: {exc}")
             continue
         recent = [j for j in jobs if j.published is None or j.published >= since]
@@ -166,10 +194,18 @@ def run(args, cfg: dict, store: Store, days: float):
             kept = recent
         else:
             kept = [j for j in recent if any(jobfilter.apply(j, p) for p in profiles)]
+            if args.email:  # jobs that failed only the required words, for the weekly email
+                kept_ids = {id(j) for j in kept}
+                for j in recent:
+                    if id(j) not in kept_ids:
+                        reason = next((r for r in (jobfilter.near_miss(j, p) for p in profiles) if r), "")
+                        if reason:
+                            near.append((j, reason))
         for j in kept:
             if not jobfilter.is_remote(j):  # on-site / hybrid (e.g. Berlin): say how much office
                 j.work_hint = workmode.describe(j)
         results.extend(kept)
+        source_runs.append(SourceRun(name, "ok", len(jobs), len(recent), len(kept), time.time() - t0))
         stats.append((name, "ok", f"{len(jobs)} fetched, {len(recent)} from last {days:g} days, {len(kept)} matched ({time.time() - t0:.1f}s)"))
         say(f"[{i}/{len(selected)}] {name}: {len(kept)} matched ({time.time() - t0:.0f}s)")
 
@@ -183,16 +219,26 @@ def run(args, cfg: dict, store: Store, days: float):
     all_failed = bool(stats) and all(s[1] == "ERROR" for s in stats)
     if args.email:
         if all_failed:
+            # most likely no internet: not recorded, so it doesn't count against the sources
             note("Every source failed (no internet?); nothing emailed")
             return 1, False
-        if new:
-            note(f"Sending email with {len(new)} jobs...")
+        history = History(store.db)
+        history.record(source_runs)
+        history.add_near_misses(near)
+        failed_runs = int((cfg.get("health") or {}).get("failed_runs", 3))
+        broken, recovered = history.health_changes([r.source for r in source_runs], failed_runs)
+        warnings = [f"{s} {why}" for s, why in broken.items()]
+        for w in warnings:
+            note(f"Source warning: {w}")
+        if new or warnings:
+            note(f"Sending email with {len(new)} jobs" + (f" and {len(warnings)} source warnings" if warnings else "") + "...")
             try:
-                mailer.send(cfg.get("email") or {}, new, stats)
+                mailer.send(cfg.get("email") or {}, new, stats, warnings)
             except Exception as exc:
                 note(f"Email failed: {type(exc).__name__}: {exc}")
                 return 1, False  # jobs not marked as seen: they go out next time
             store.mark_seen(new)
+        history.mark_alerted(list(broken), recovered)
         print(f"{datetime.now():%Y-%m-%d %H:%M} emailed {len(new)} new of {len(results)} matches")
         for name, status, msg in stats:
             print(f"  {name:15} {status:5} {msg}")

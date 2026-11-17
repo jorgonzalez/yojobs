@@ -4,6 +4,11 @@ applicant-tracking systems most tech companies use:
   greenhouse  https://boards-api.greenhouse.io/v1/boards/<id>/jobs
   lever       https://api.lever.co/v0/postings/<id>?mode=json
   ashby       https://api.ashbyhq.com/posting-api/job-board/<id>
+  personio    https://<id>.jobs.personio.de/xml   (many German companies)
+  recruitee   https://<id>.recruitee.com/api/offers/
+
+Not supported: SmartRecruiters (its API's robots.txt only allows LinkedIn's bot)
+and Workable (rate-limits even a handful of requests).
 
 config.yaml:
   companies:
@@ -11,14 +16,17 @@ config.yaml:
     boards: ["greenhouse:gitlab", "ashby:n8n", "lever:sysdig"]
 
 Greenhouse lists have no description, so it is fetched only for jobs whose title +
-location already match. Lever and Ashby include descriptions and an explicit work
-mode (remote / hybrid / on-site), which we use as the remote flag.
+location already match. Lever, Ashby, Personio and Recruitee include descriptions;
+Lever, Ashby and Recruitee also state the work mode (remote / hybrid / on-site),
+which we use as the remote flag. Personio only has the office text
+("Berlin / 100% remote möglich"), so remote is decided from that.
 """
 from __future__ import annotations
 
 import time
+import xml.etree.ElementTree as ET
 
-from ..http import get_json
+from ..http import get_bytes, get_json
 from ..models import Job, from_timestamp, parse_iso, strip_html
 from ..progress import say
 
@@ -99,6 +107,71 @@ def _ashby(board):
     return jobs
 
 
+def _personio(board):
+    """Personio XML feed. A board may be "name" (jobs.personio.de) or "name.com"."""
+    name, _, tld = board.partition(".")
+    host = f"https://{name}.jobs.personio.{tld or 'de'}"
+    # English where the ad has an English version; otherwise the ad's own language
+    # (asking for English returns no text for German-only ads)
+    def descriptions(params):
+        root = ET.fromstring(get_bytes(f"{host}/xml", params))
+        return root, {(pos.findtext("id") or "").strip(): " ".join(
+            f"{(d.findtext('name') or '').strip()}: {strip_html(d.findtext('value') or '')}"
+            for d in pos.iter("jobDescription") if (d.findtext("value") or "").strip())
+            for pos in root.iter("position")}
+    root, english = descriptions({"language": "en"})
+    original = None
+    jobs = []
+    for pos in root.iter("position"):
+        text = lambda tag: (pos.findtext(tag) or "").strip()
+        offices = [text("office")] + [(o.text or "").strip() for o in pos.iter("additionalOffice")]
+        description = english.get(text("id"), "")
+        if not description:
+            if original is None:
+                time.sleep(0.3)
+                original = descriptions({})[1]
+            description = original.get(text("id"), "")
+        jobs.append(Job(
+            source="companies",
+            title=text("name"),
+            company=text("subcompany") or name.replace("-", " ").title(),
+            url=f"{host}/job/{text('id')}?language=en",
+            location=", ".join(dict.fromkeys(o for o in offices if o)),
+            published=parse_iso(text("createdAt")),
+            description=description,
+            tags=[t for t in (text("department"), text("seniority"), text("keywords")) if t],
+        ))
+    return jobs
+
+
+def _recruitee(board):
+    jobs = []
+    for o in get_json(f"https://{board}.recruitee.com/api/offers/").get("offers", []):
+        if o.get("remote") and not (o.get("hybrid") or o.get("on_site")):
+            remote, mode = True, "remote"
+        elif o.get("hybrid"):
+            remote, mode = False, "hybrid"
+        elif o.get("on_site"):
+            remote, mode = False, "onsite"
+        else:
+            remote, mode = None, ""
+        places = [o.get("location") or ""] + [l.get("name") or "" for l in o.get("locations") or []] \
+            + [o.get("city") or "", o.get("country") or ""]
+        jobs.append(Job(
+            source="companies",
+            title=o.get("title") or "",
+            company=o.get("company_name") or board.title(),
+            url=o.get("careers_url") or "",
+            location=", ".join(dict.fromkeys(p for p in places if p)),
+            published=parse_iso((o.get("published_at") or o.get("created_at") or "").replace(" UTC", "+00:00")),
+            description=strip_html(" ".join(x for x in (o.get("description"), o.get("requirements")) if x)),
+            tags=[t for t in (o.get("department"), o.get("category_code")) if t],
+            remote=remote,
+            work_mode=mode,
+        ))
+    return jobs
+
+
 def fetch(cfg, since):
     title_ok = cfg.get("_title_ok") or (lambda job: True)
     boards = cfg.get("boards") or []
@@ -113,6 +186,10 @@ def fetch(cfg, since):
                 found = _lever(board)
             elif ats == "ashby":
                 found = _ashby(board)
+            elif ats == "personio":
+                found = _personio(board)
+            elif ats == "recruitee":
+                found = _recruitee(board)
             else:
                 say(f"    companies: unknown system '{ats}' for {board}")
                 continue

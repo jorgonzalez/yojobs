@@ -59,6 +59,24 @@ database: seen.sqlite
 dedupe_days: 60
 
 # ---------------------------------------------------------------------------
+# Weekly summary and source health
+# ---------------------------------------------------------------------------
+# Once a week (with the first scheduled run on/after `day`) an extra email:
+# runs, jobs checked and emailed, a status table of every source, and the
+# "near misses": jobs that passed every rule except the required words
+# (all_of), e.g. a platform leadership job whose ad never says Kubernetes.
+# Preview it any time: python -m yojobs --weekly   (add --email to send it)
+weekly:
+  enabled: true
+  day: monday
+  near_misses: true
+
+# A source that errors or returns 0 jobs for this many runs in a row (usually
+# the site changed) triggers one warning email, sent even without new jobs.
+health:
+  failed_runs: 3
+
+# ---------------------------------------------------------------------------
 # Sources (job portals)
 # ---------------------------------------------------------------------------
 # Set enabled: false to skip one. Run a single source while testing:
@@ -93,6 +111,8 @@ sources:
   #   job-boards.greenhouse.io/<id>  ->  "greenhouse:<id>"
   #   jobs.lever.co/<id>             ->  "lever:<id>"
   #   jobs.ashbyhq.com/<id>          ->  "ashby:<id>"
+  #   <id>.jobs.personio.de          ->  "personio:<id>"   (.jobs.personio.com -> "personio:<id>.com")
+  #   <id>.recruitee.com             ->  "recruitee:<id>"
   # A board that doesn't exist (or moved) is reported in the output and skipped.
   companies:
     enabled: true
@@ -129,6 +149,13 @@ sources:
       # more European tech (added 2026-11-17)
       "ashby:deepl", "ashby:alephalpha", "ashby:babbel", "ashby:doctolib", "ashby:qonto",
       "ashby:alan", "ashby:pennylane", "ashby:mollie", "greenhouse:adyen", "lever:spotify",
+      # German companies on Personio / Recruitee (cloud & consulting first)
+      "personio:syseleven", "personio:codecentric", "personio:qaware", "personio:tngtech",
+      "personio:mayflower", "recruitee:inovex", "recruitee:gridscale", "personio:tado",
+      "personio:clark", "personio:mobimeo", "personio:1komma5grad", "personio:thermondo",
+      "personio:ottonova", "personio:westwing", "personio:studysmarter", "personio:everphone",
+      "personio:penta", "personio:vivid", "personio:smartbroker", "recruitee:rebuy",
+      "recruitee:bunq", "recruitee:ginmon",
     ]
 
   # LinkedIn via jobdrop (no account used). Each search = ~2 requests; descriptions

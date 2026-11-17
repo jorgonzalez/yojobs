@@ -145,3 +145,17 @@ def apply(job: Job, profile: dict, check_all_of: bool = True) -> bool:
     job.score = len(matched)
     job.notes = notes
     return True
+
+
+def near_miss(job: Job, profile: dict) -> str:
+    """For a job the profile rejected: if it fails ONLY the required words
+    (all_of), say which ones are missing; otherwise "". Used for the weekly
+    "near misses" list (e.g. a leadership platform job whose ad never says Kubernetes)."""
+    all_of = profile.get("all_of") or []
+    if not all_of or not apply(job, profile, check_all_of=False):
+        return ""
+    if not job.description:
+        return "ad text not available"
+    text = _text(job, profile.get("all_of_in") or ["title", "description", "tags"])
+    missing = [a.split("|")[0] for a in all_of if not _hits([a], text)]
+    return f"no {', '.join(missing)} in the ad" if missing else ""

@@ -46,6 +46,7 @@ Paste the App Password when asked (spaces are ignored). Use the same address as
 .venv/bin/python -m yojobs --all                # no keyword filter (debug)
 .venv/bin/python -m yojobs --email              # email jobs not sent before, then remember them
 .venv/bin/python -m yojobs --email --days 30    # catch-up email for the last month
+.venv/bin/python -m yojobs --weekly             # preview the weekly summary (add --email to send it)
 ```
 
 Preview mode prints matches sorted by score, then date, and marks jobs not emailed yet
@@ -134,6 +135,21 @@ See `config.example.yaml` for complete examples: a platform/infrastructure leade
 profile (active), a remote Python backend developer, data engineering in Munich, and
 frontend roles at specific companies.
 
+## Weekly summary, near misses and source health
+
+Real runs (`--email` and scheduled runs) keep a small history in `seen.sqlite`:
+
+- **Weekly summary** (`weekly:` in config.yaml): once a week, with the first scheduled
+  run on or after `day`, an extra email with runs, jobs checked and emailed, and a
+  status table of every source. It's also how you know yojobs is still running.
+- **Near misses** (in the weekly email): jobs that passed every rule except the
+  required words (`all_of`), e.g. a platform leadership job whose ad never says
+  Kubernetes. Each is listed once; jobs already emailed as matches are left out.
+- **Source health** (`health:`): a source that errors or returns 0 jobs for
+  `failed_runs` runs in a row (usually because the site changed) triggers one
+  warning email, sent even when there are no new jobs. Runs where every source
+  fails (no internet) don't count.
+
 ## Duplicates
 
 A job is never emailed twice: its URL is remembered forever, and its normalized
@@ -159,7 +175,7 @@ Sr/Jr/Mgr.
 | startupmap | JSON | ~16k EU startup jobs in one request; no descriptions |
 | berlinstartupjobs | RSS | teaser only; full page fetched for title matches |
 | welcometothejungle | sitemaps | job pages are bot-protected, so sitemap URLs only: Berlin jobs, no descriptions |
-| companies | Greenhouse / Lever / Ashby APIs | company career pages, `boards:` as `"system:id"`; ~90-115 s for 115 companies |
+| companies | Greenhouse / Lever / Ashby / Personio / Recruitee | company career pages, `boards:` as `"system:id"`; ~2 min for 137 companies |
 | linkedin | jobdrop | searches in config; descriptions fetched only for title/location matches; ~10 min |
 | indeed | jobdrop | one Indeed country per config; descriptions included; fast |
 
@@ -179,6 +195,11 @@ Find its jobs page and use the id from the URL:
 | `job-boards.greenhouse.io/<id>` | `"greenhouse:<id>"` |
 | `jobs.lever.co/<id>` | `"lever:<id>"` |
 | `jobs.ashbyhq.com/<id>` | `"ashby:<id>"` |
+| `<id>.jobs.personio.de` | `"personio:<id>"` (`.jobs.personio.com` → `"personio:<id>.com"`) |
+| `<id>.recruitee.com` | `"recruitee:<id>"` |
+
+SmartRecruiters and Workable aren't supported: SmartRecruiters' API robots.txt only
+allows LinkedIn's bot, and Workable rate-limits after a handful of requests.
 
 ### Adding a source
 
