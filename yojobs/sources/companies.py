@@ -176,6 +176,7 @@ def fetch(cfg, since):
     title_ok = cfg.get("_title_ok") or (lambda job: True)
     boards = cfg.get("boards") or []
     jobs, failed = [], []
+    problems = cfg.get("_problems")  # list provided by the runner: (board, error) per failed board
     for n, entry in enumerate(boards, 1):
         ats, _, board = str(entry).partition(":")
         say(f"    companies {n}/{len(boards)}: {board} ({ats})")
@@ -195,6 +196,8 @@ def fetch(cfg, since):
                 continue
         except Exception as exc:  # one company's board must not stop the rest
             failed.append(board)
+            if problems is not None:
+                problems.append((f"{ats}:{board}", f"{type(exc).__name__}: {exc}"[:200]))
             say(f"    companies: {board} failed: {type(exc).__name__}: {exc}")
             continue
         for job in found:
