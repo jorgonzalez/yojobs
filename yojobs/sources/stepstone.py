@@ -6,9 +6,10 @@ robots.txt allows (its API, the "home office" section and most URLs with
 parameters are disallowed, so there are no remote searches).
 
 Each page embeds its ~25 results as JSON (title, company, location, date, a
-~500-character excerpt, skills). Job pages aren't opened: they timed out when
-tried, so ad_must_mention is checked on the excerpt and skills only; jobs that
-miss it show up in the weekly near misses.
+~500-character excerpt, the benefits section, skills). Job pages aren't opened: they
+timed out when tried, so ad_must_mention is checked on that text only; jobs that miss
+it show up in the weekly near misses. The excerpt is StepStone's German summary even
+for English ads, so the benefits section (in the ad's own language) comes first.
 
 This reads data embedded in StepStone's web page, not a feed, so a redesign can
 break it; the health warnings will say so.
@@ -59,6 +60,11 @@ def records(page: str) -> List[dict]:
 def to_job(o: dict) -> Job:
     skills = [str(s.get("name", s)) if isinstance(s, dict) else str(s) for s in (o.get("skills") or [])]
     excerpt = strip_html(o.get("textSnippet"))
+    # The excerpt is StepStone's own summary and is German even for English ads; the
+    # benefits section is the ad's own text in its own language. Benefits first, so an
+    # English ad reads as English/mixed (kept) and a German ad as German (skipped by
+    # skip_ad_languages: [de]).
+    benefits = strip_html(o.get("jobBenefitsHtml"))
     wfh = str(o.get("workFromHome") or "")
     return Job(
         source="stepstone",
@@ -67,7 +73,7 @@ def to_job(o: dict) -> Job:
         url=str(o.get("url") or "").split("?")[0],
         location=o.get("location") or "",
         published=parse_iso(o.get("datePosted")),
-        description=" ".join(x for x in [excerpt, "Skills: " + ", ".join(skills) if skills else ""] if x),
+        description=" ".join(x for x in [benefits, excerpt, "Skills: " + ", ".join(skills) if skills else ""] if x),
         tags=skills,
         remote=False,  # city searches; the "home office" section is off limits
         work_mode="hybrid" if wfh == "2" else "",  # "2" = partly from home; other values unclear
