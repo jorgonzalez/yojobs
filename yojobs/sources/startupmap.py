@@ -45,6 +45,7 @@ def fetch(cfg, since):
         jobs.append(Job(
             source="startupmap",
             remote=_remote(j),
+            work_mode=j.get("workplace_type") or "",
             title=j.get("job_title") or "",
             company=_company(j.get("startup_id", "")),
             url=j["apply_url"],

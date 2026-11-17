@@ -16,7 +16,7 @@ from pathlib import Path
 import yaml
 
 from . import filter as jobfilter
-from . import mailer
+from . import mailer, workmode
 from . import progress
 from .progress import note, say, step
 from .schedule import RunLock, State, is_due, trim_log
@@ -166,6 +166,9 @@ def run(args, cfg: dict, store: Store, days: float):
             kept = recent
         else:
             kept = [j for j in recent if any(jobfilter.apply(j, p) for p in profiles)]
+        for j in kept:
+            if not jobfilter.is_remote(j):  # on-site / hybrid (e.g. Berlin): say how much office
+                j.work_hint = workmode.describe(j)
         results.extend(kept)
         stats.append((name, "ok", f"{len(jobs)} fetched, {len(recent)} from last {days:g} days, {len(kept)} matched ({time.time() - t0:.1f}s)"))
         say(f"[{i}/{len(selected)}] {name}: {len(kept)} matched ({time.time() - t0:.0f}s)")
@@ -200,6 +203,7 @@ def run(args, cfg: dict, store: Store, days: float):
         mark = "*" if id(j) in new_ids else " "
         print(f"{mark}[{j.score}] {j.title} — {j.company}  ({j.source}, {date})")
         loc = j.location if len(j.location) <= 80 else j.location[:77] + "..."
+        loc += f" ({j.work_hint})" if j.work_hint else ""
         extras = " | ".join(x for x in [loc, j.salary, ", ".join(j.matched), "; ".join(j.notes).upper()] if x)
         if extras:
             print(f"     {extras}")

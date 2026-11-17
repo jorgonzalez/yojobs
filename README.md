@@ -119,6 +119,12 @@ Matching is case-insensitive and whole-word; a space also matches a hyphen.
 Sources without job descriptions (marked below) can't check `all_of`: their jobs are
 kept and marked "<word> not verified" in the email.
 
+On-site / hybrid jobs get a work-mode hint next to the location, e.g.
+`Berlin (hybrid · 2-3 office days/week)`. It comes from the job board when it states
+the mode (Greenhouse, Lever, Ashby, StartupMap), otherwise from the ad text in English
+or German ("3 days a week in the office", "2 Tage pro Woche im Büro"). When the ad
+gives a number of office days, that number decides: under 5 is hybrid, 5 is on-site.
+
 For remote jobs the location means where you may live, so "Remote · Cork, Ireland"
 or "Remote, USA only" are dropped unless the region is allowed.
 

@@ -72,6 +72,7 @@ def _lever(board):
             description=" ".join(x for x in [j.get("descriptionPlain"), j.get("additionalPlain"),
                                              " ".join(strip_html(l.get("content")) for l in j.get("lists") or [])] if x),
             remote=_mode(j.get("workplaceType")),
+            work_mode=j.get("workplaceType") or "",
         ))
     return jobs
 
@@ -93,6 +94,7 @@ def _ashby(board):
             published=parse_iso(j.get("publishedAt")),
             description=j.get("descriptionPlain") or "",
             remote=_mode(j.get("workplaceType")),
+            work_mode=j.get("workplaceType") or "",
         ))
     return jobs
 

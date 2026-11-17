@@ -47,7 +47,8 @@ def render(jobs: List[Job], stats: Sequence[Tuple[str, str, str]]) -> Tuple[str,
     lines, rows = [], []
     for j in jobs:
         date = j.published.strftime("%d %b") if j.published else ""
-        meta = " · ".join(x for x in [j.company, _short(j.location, 60), j.salary, f"{j.source} {date}".strip()] if x)
+        place = _short(j.location, 60) + (f" ({j.work_hint})" if j.work_hint else "")
+        meta = " · ".join(x for x in [j.company, place.strip(), j.salary, f"{j.source} {date}".strip()] if x)
         note = f"  ({'; '.join(j.notes)})" if j.notes else ""
         lines += [f"[{j.score}] {j.title}{note}", f"    {meta}", f"    matched: {', '.join(j.matched)}", f"    {j.url}", ""]
         e = html.escape

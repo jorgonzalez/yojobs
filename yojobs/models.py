@@ -23,6 +23,8 @@ class Job:
     has_description: bool = True  # False for sources that never provide one
     remote: Optional[bool] = None  # True remote, False on-site/hybrid, None unknown
     source_notes: List[str] = field(default_factory=list)  # e.g. "remote per description"
+    work_mode: str = ""  # as stated by the source: "remote", "hybrid", "onsite" (or "")
+    work_hint: str = ""  # shown next to the location, e.g. "hybrid · 2 office days/week"
 
 
     # Filled in by the filter step
