@@ -4,6 +4,12 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.9.2 — #12 [fix][http] Cap each download at 2 minutes in total
+- The 30 s timeout applied to each read, so a connection trickling data could hang a
+  download much longer: one company board (Notion) stalled a run for ~10 minutes.
+  Each download now also has a 120 s total limit; a board that hits it is skipped
+  and reported like any failed board.
+
 ## v0.9.1 — #11 [fix][matching] Give Ollama enough context for a full CV
 - Requests now set `num_ctx` (`context_tokens`, default 16384). Ollama's default room
   (~2048 tokens) silently cut a real CV + ad (~4,600 tokens), and the model returned
