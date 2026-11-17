@@ -103,6 +103,8 @@ sources:
     # url: https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss
   workingnomads:  {enabled: true}
   euremotejobs:   {enabled: true}   # homepage (latest ~60); job pages opened only for matches
+  euroremotejobs: {enabled: true}   # euroremotejobs.com (not EU Remote Jobs above): newest 100 via job feed
+  jobspresso:     {enabled: true}   # only the newest 10 per run: robots.txt disallows feed URLs with "?"
     # delay_seconds: 3              # pause between job pages (be polite)
   hackernews:     {enabled: true, threads: 2}   # monthly "Who is hiring?" threads (latest 2)
 
