@@ -16,7 +16,7 @@ from pathlib import Path
 import yaml
 
 from . import filter as jobfilter
-from . import mailer, weekly, workmode
+from . import __version__, mailer, weekly, workmode
 from .history import History, SourceRun
 from . import progress
 from .progress import note, say, step
@@ -54,6 +54,7 @@ def load_config(path: Path) -> dict:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="yojobs")
+    ap.add_argument("--version", action="version", version=f"yojobs {__version__}")
     ap.add_argument("--config", default=ROOT / "config.yaml", type=Path)
     ap.add_argument("--email", action="store_true", help="email new jobs and remember them")
     ap.add_argument("--source", action="append", help="only run this source (repeatable)")
