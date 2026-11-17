@@ -173,6 +173,7 @@ Sr/Jr/Mgr.
 | landingjobs | JSON API | EU tech, many on-site/hybrid |
 | 4dayweek | RSS | titles only, no descriptions |
 | startupmap | JSON | ~16k EU startup jobs in one request; no descriptions |
+| arbeitnow | JSON API | jobs in Germany (many Berlin, ~1/3 in German); 300 per page, ~20 s for 30 days |
 | berlinstartupjobs | RSS | teaser only; full page fetched for title matches |
 | welcometothejungle | sitemaps | job pages are bot-protected, so sitemap URLs only: Berlin jobs, no descriptions |
 | companies | Greenhouse / Lever / Ashby / Personio / Recruitee | company career pages, `boards:` as `"system:id"`; ~2 min for 137 companies |

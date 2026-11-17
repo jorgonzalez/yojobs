@@ -103,6 +103,7 @@ sources:
   4dayweek:       {enabled: true}   # no descriptions: all_of words marked 'not verified'
   startupmap:     {enabled: true}   # Berlin startup map; no descriptions
   berlinstartupjobs: {enabled: true}
+  arbeitnow:      {enabled: true, max_pages: 10}   # Germany, many Berlin tech jobs; ~3 days per page
     # feeds: [https://berlinstartupjobs.com/engineering/feed/]   # default: engineering + all jobs
   welcometothejungle: {enabled: true}  # sitemaps only (job pages are bot-protected): Berlin jobs, no descriptions
 
