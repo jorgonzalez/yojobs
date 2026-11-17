@@ -194,7 +194,6 @@ from them only counts as remote if its location/title/description clearly says s
 (`yojobs/remote.py`); jobs remote only per description are marked "check".
 
 Not supported: sites that block automated access (e.g. hiring.cafe, Wellfound).
-yojobs respects robots.txt and does not work around bot protection.
 
 ### Adding a company
 
