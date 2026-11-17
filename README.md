@@ -32,6 +32,7 @@ cp -R config.example config            # then edit config/settings.yaml (email) 
 | `sources.yaml` | which portals are on/off, and their options |
 | `searches.yaml` | LinkedIn/Indeed search terms × places |
 | `companies.yaml` | company career pages, by hiring system |
+| `matching.yaml` | optional CV match with a local AI model (off by default) |
 
 Every `.yaml` file in `config/` is read; the same setting in two files is an error.
 `config/` is git-ignored: your email address and searches never go into the repo.
@@ -176,6 +177,23 @@ Real runs (`--email` and scheduled runs) keep a small history in `seen.sqlite`:
   in a row (e.g. 404 because the company moved to another hiring system) triggers
   one warning, and every board that failed during the week is listed in the weekly
   email.
+
+## CV match (optional)
+
+yojobs can rate each new job against your CV with a local AI model through
+[Ollama](https://ollama.com), so nothing leaves your Mac. It's off by default.
+
+1. Install Ollama and a model: `ollama pull gpt-oss:20b` (13 GB; ~16 GB RAM needed)
+2. Put your CV in `cv/` (git-ignored) as a `.md`, `.txt`, `.docx` or `.pdf` file (any name)
+   (PDF needs `.venv/bin/pip install pypdf`). Optionally add `cv/wishes.md`: what you
+   want and don't want; the score takes it into account.
+3. Set `enabled: true` in `config/matching.yaml`, then check the setup:
+   `.venv/bin/python -m yojobs --cv-check`
+
+Each new job then gets a line like `CV match 82% · strong: … · gaps: …` plus a one-line
+summary, and the email lists the best matches first. The score never hides a job. Only
+jobs about to be emailed are scored (~15–20 s each on an M2), each one once; jobs
+without ad text get no score. If Ollama isn't running, the email just has no scores.
 
 ## Duplicates
 

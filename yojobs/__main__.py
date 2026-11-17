@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from . import filter as jobfilter
-from . import __version__, mailer, weekly, workmode
+from . import __version__, mailer, matching, weekly, workmode
 from .history import History, SourceRun
 from . import progress
 from .progress import note, say, step
@@ -40,6 +40,8 @@ def main(argv=None) -> int:
                     help="build the weekly summary now (print it; with --email, send it)")
     ap.add_argument("--split-config", action="store_true",
                     help="convert config.yaml into the config/ folder (checks the result is identical)")
+    ap.add_argument("--cv-check", action="store_true",
+                    help="show the CV match setup (CV file, wishes, Ollama) without scoring")
     ap.add_argument("-v", "--verbose", action="store_true",
                     help="print every step on its own line (default: one status line)")
     args = ap.parse_args(argv)
@@ -51,6 +53,8 @@ def main(argv=None) -> int:
         return split_run(args.config or ROOT / "config.yaml", ROOT / "config")
     cfg = load_config(args.config or default_path(ROOT))
     store = Store(ROOT / cfg.get("database", "seen.sqlite"), key_days=cfg.get("dedupe_days", 60))
+    if args.cv_check:
+        return matching.check(cfg, ROOT)
     if args.scheduled or args.check_schedule:
         return scheduled(args, cfg, store)
 
@@ -204,6 +208,9 @@ def run(args, cfg: dict, store: Store, days: float):
     results.sort(key=lambda j: (j.score, j.published or since), reverse=True)
 
     new = store.filter_new(results)
+    # optional CV match (config/matching.yaml): score the new jobs, best first; never hides any
+    matching.score_jobs(new, cfg, ROOT, store.db)
+    new = matching.by_score(new)
     note(f"{len(results)} matches, {len(new)} not sent before")
     new_ids = {id(j) for j in new}
 
@@ -244,6 +251,8 @@ def run(args, cfg: dict, store: Store, days: float):
         extras = " | ".join(x for x in [loc, j.salary, ", ".join(j.matched), "; ".join(j.notes).upper()] if x)
         if extras:
             print(f"     {extras}")
+        if j.match:
+            print(f"     {mailer.match_line(j.match)}")
         print(f"     {j.url}")
 
     print(f"\n{len(results)} jobs, last {days:g} days ({len(new)} new, marked *)")
