@@ -4,6 +4,16 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.10.0 — #13 [feat][sources] Add StepStone (search pages, Berlin, excerpt only)
+- New source `stepstone`: one search page per term in `searches.yaml`, in city places
+  only (robots.txt disallows its API and "home office" section, so no remote
+  searches); ~25 results per page from the JSON embedded in the page.
+- Job pages aren't opened (they timed out when tried): `ad_must_mention` is checked
+  on the ~500-character excerpt plus skills; misses go to the weekly near misses.
+  Matches are marked "excerpt only".
+- A failed search is skipped and reported to the health checks; all failing is an error.
+- A trial over 12 terms in Berlin found 3 matches, 2 of them on no other source.
+
 ## v0.9.2 — #12 [fix][http] Cap each download at 2 minutes in total
 - The 30 s timeout applied to each read, so a connection trickling data could hang a
   download much longer: one company board (Notion) stalled a run for ~10 minutes.

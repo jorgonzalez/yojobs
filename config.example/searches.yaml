@@ -3,6 +3,7 @@
 # `remote: true` asks for remote jobs; the sites' remote filter is unreliable, so a
 # job only counts as remote if its title or ad clearly says so.
 # `only: [linkedin]` limits a group to one site (Indeed has no "European Union").
+# StepStone uses the terms too, but only in city places (e.g. Berlin), never remote ones.
 # Each search is ~2 requests; keep the total moderate.
 searches:
   - terms: [DevOps Manager, SRE Manager, Engineering Manager Infrastructure,

@@ -28,3 +28,6 @@ sources:
   # Via the jobdrop library (searches in searches.yaml)
   linkedin: {enabled: true, results_per_search: 50}
   indeed: {enabled: true, country: Germany, results_per_search: 50}   # one Indeed country site
+  # StepStone: search pages for the searches.yaml terms in cities only (no remote searches allowed);
+  # job pages aren't opened, so ad_must_mention is checked on the ~500-character excerpt
+  stepstone: {enabled: true, delay_seconds: 4}
