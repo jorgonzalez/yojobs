@@ -1,0 +1,82 @@
+# What you're looking for. A job is emailed if it passes every rule below, checked
+# in this order:
+#   1. exclude_titles    drop the job if any of these words is in the title
+#   2. skip_*            language rules (need the ad text)
+#   3. ad_must_mention   every entry must appear in the ad; "a|b" = either word.
+#                        Sources without ad text can't check this: their jobs are kept
+#                        and marked "<word> not verified" in the email.
+#   4. where             on-site cities / remote regions
+#   5. title_must_have   the title needs a word from EACH group (AND between groups,
+#                        OR inside a group)
+#   6. title_any         optional extra words; each one found adds +1 to the score
+#                        (at least min_score words from groups + title_any must match)
+# Words match whole words, case-insensitively; a space also matches a hyphen
+# ("Site Reliability" matches "Site-Reliability").
+#
+# This example: leadership roles in platform / infrastructure, on-site in Berlin or
+# remote in Europe. More example profiles are at the end of this file.
+
+profile:
+  name: platform-leadership
+
+  title_must_have:
+    role: [Manager, Engineering Manager, Head of, Director, VP, Vice President, Team Lead,
+           Teamleiter, Teamleitung, Leiter, Leitung]
+    area: [Platform, Plattform, Infrastructure, Infrastruktur, DevOps, SRE, Site Reliability,
+           Reliability, Cloud, GCP, Kubernetes]
+
+  ad_must_mention: ["Kubernetes|K8s"]
+  ad_must_mention_in: [title, description, tags]
+
+  # Grouped only to make the list readable; group names are free.
+  exclude_titles:
+    sales_and_product: [Account Executive, Product Manager, Head of Product, Growth, Sales,
+                        Marketing, Partner Manager, Alliances, Partnerships]
+    project_and_purchasing: [Project Manager, Program Manager, Programme Manager, Procurement]
+    # corporate IT as the main job (IT as a side part, e.g. "Platform and IT Compliance", is fine)
+    corporate_it: [Director of IT, Head of IT, VP of IT, IT Director, IT Manager, IT Operations,
+                   IT Infrastructure, IT Security, Corporate IT, Corporate Security, IT Support,
+                   Service Desk, Workplace, IT Leiter, Leiter IT, IT Leitung, Leitung IT]
+  exclude_in: [title]
+  match_in: [title]          # add description / tags for wider (noisier) matching
+  min_score: 1
+
+  where:
+    # on-site / hybrid jobs: only in these cities (any work mode is fine there)
+    onsite_cities: [Berlin]
+    # remote jobs: the location (= where you may live) must mention one of these, or be
+    # plain "Remote". "Remote, Ireland" or "USA only" are dropped. Empty = anywhere.
+    remote_regions: [Germany, Deutschland, Europe, European, EU, EMEA, CET, Worldwide, Anywhere,
+                     Global]
+
+  # Language (needs the ad text; jobs from sources without ad text are kept):
+  #  - skip ads written in these languages (de = German; bilingual ads are kept)
+  # skip_ad_languages: [de]
+  #  - skip ads that require fluency ("fluent German", "Deutsch C1"); "German is a plus" doesn't count
+  # skip_if_requires: [German]
+
+# --- More example profiles -----------------------------------------------------
+# To use several, replace `profile:` above with a list under `profiles:`; a job is
+# emailed if it passes ANY of them:
+#
+# profiles:
+#   - name: python-backend          # remote Python backend developer, anywhere in Europe
+#     title_any: [Python, Django, FastAPI, Backend, Back End, Engineer, Developer]
+#     min_score: 2                  # e.g. "Senior Python Backend Engineer"
+#     exclude_titles: [Junior, Intern, Werkstudent, Manager, Sales]
+#     where: {remote_regions: [Europe, EU, EMEA, CET, Worldwide, Anywhere]}
+#
+#   - name: data-engineering-munich # Munich on-site/hybrid, or remote within Germany
+#     title_must_have:
+#       level: [Senior, Lead, Staff, Principal]
+#       area: [Data Engineer, Analytics Engineer, Data Platform]
+#     ad_must_mention: ["AWS|GCP|Azure", "Spark|dbt|Airflow"]
+#     exclude_titles: [Data Scientist, Werkstudent, Praktikum]
+#     where: {onsite_cities: [München, Munich], remote_regions: [Germany, Deutschland]}
+#
+#   - name: frontend-dream-companies # frontend roles, fully remote, specific companies
+#     title_must_have:
+#       area: [Frontend, Front End, React, TypeScript]
+#       company: [Vercel, Supabase, PostHog, Sentry]
+#     match_in: [title, company]
+#     where: {remote_regions: []}

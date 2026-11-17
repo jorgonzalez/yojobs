@@ -1,0 +1,30 @@
+# Which portals to check: on, off, or {enabled: ..., option: ...}.
+# LinkedIn/Indeed searches are in searches.yaml; company career pages in companies.yaml.
+# Try one source on its own:  python -m yojobs --source remotive --days 7
+sources:
+  # Remote-only boards
+  remotive: on                    # max ~4 runs/day per Remotive's terms
+  remoteok: on                    # latest ~100; credit Remote OK + link to the job (the email does)
+  himalayas: {enabled: true, max_pages: 20}   # searches each ad_must_mention word
+  jobicy: {enabled: true, count: 100}         # optional region filter: geo: europe | germany | usa
+  weworkremotely: on              # optional single category: url: https://weworkremotely.com/categories/...rss
+  workingnomads: on
+  euremotejobs: on                # euremotejobs.com homepage (latest ~60)
+  euroremotejobs: on              # euroremotejobs.com job feed (newest 100)
+  jobspresso: on                  # only the newest 10 per run (robots.txt disallows feed URLs with "?")
+  hackernews: {enabled: true, threads: 2}     # monthly "Who is hiring?" threads
+
+  # Europe / Germany / startups
+  landingjobs: {enabled: true, max_pages: 6}
+  4dayweek: on                    # no ad text
+  startupmap: on                  # Berlin startup map; no ad text
+  berlinstartupjobs: on
+  arbeitnow: {enabled: true, max_pages: 10}   # Germany, many Berlin jobs; ~3 days per page
+  welcometothejungle: on          # sitemaps only (pages are bot-protected): Berlin jobs, no ad text
+
+  # Company career pages (list in companies.yaml)
+  companies: on
+
+  # Via the jobdrop library (searches in searches.yaml)
+  linkedin: {enabled: true, results_per_search: 50}
+  indeed: {enabled: true, country: Germany, results_per_search: 50}   # one Indeed country site

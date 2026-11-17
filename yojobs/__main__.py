@@ -13,8 +13,6 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import yaml
-
 from . import filter as jobfilter
 from . import __version__, mailer, weekly, workmode
 from .history import History, SourceRun
@@ -22,40 +20,16 @@ from . import progress
 from .progress import note, say, step
 from .schedule import RunLock, State, is_due, trim_log
 from .sources import SOURCES
+from .config import default_path, load_config
 from .store import Store, norm_company
 
 ROOT = Path(__file__).resolve().parent.parent  # repo dir; launchd runs from elsewhere
 
 
-class _StrictLoader(yaml.SafeLoader):
-    """YAML loader that rejects duplicate keys (plain YAML silently keeps the last)."""
-
-
-def _no_duplicates(loader, node, deep=False):
-    seen = set()
-    for key_node, _ in node.value:
-        key = loader.construct_object(key_node, deep=deep)
-        if key in seen:
-            raise yaml.constructor.ConstructorError(
-                None, None, f"duplicate key {key!r} in config", key_node.start_mark)
-        seen.add(key)
-    return loader.construct_mapping(node, deep)
-
-
-_StrictLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _no_duplicates)
-
-
-def load_config(path: Path) -> dict:
-    if not path.exists():
-        sys.exit(f"Config not found: {path}. Copy config.example.yaml to config.yaml first.")
-    with path.open() as fh:
-        return yaml.load(fh, Loader=_StrictLoader) or {}
-
-
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="yojobs")
     ap.add_argument("--version", action="version", version=f"yojobs {__version__}")
-    ap.add_argument("--config", default=ROOT / "config.yaml", type=Path)
+    ap.add_argument("--config", type=Path, help="config folder or file (default: config/, else config.yaml)")
     ap.add_argument("--email", action="store_true", help="email new jobs and remember them")
     ap.add_argument("--source", action="append", help="only run this source (repeatable)")
     ap.add_argument("--days", type=float, help="override max_age_days")
@@ -64,13 +38,18 @@ def main(argv=None) -> int:
     ap.add_argument("--check-schedule", action="store_true", help="only say whether a scheduled run is due")
     ap.add_argument("--weekly", action="store_true",
                     help="build the weekly summary now (print it; with --email, send it)")
+    ap.add_argument("--split-config", action="store_true",
+                    help="convert config.yaml into the config/ folder (checks the result is identical)")
     ap.add_argument("-v", "--verbose", action="store_true",
                     help="print every step on its own line (default: one status line)")
     args = ap.parse_args(argv)
     # the launchd log is always verbose
     progress.set_verbose(args.verbose or args.scheduled)
 
-    cfg = load_config(args.config)
+    if args.split_config:
+        from .config_split import run as split_run
+        return split_run(args.config or ROOT / "config.yaml", ROOT / "config")
+    cfg = load_config(args.config or default_path(ROOT))
     store = Store(ROOT / cfg.get("database", "seen.sqlite"), key_days=cfg.get("dedupe_days", 60))
     if args.scheduled or args.check_schedule:
         return scheduled(args, cfg, store)

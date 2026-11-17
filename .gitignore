@@ -6,6 +6,7 @@
 .venv/
 __pycache__/
 config.yaml
+config/
 logs/
 schedule_state.json
 yojobs.lock

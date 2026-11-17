@@ -1,0 +1,9 @@
+# Companies whose jobs are never emailed (and never listed as near misses), e.g.
+# where you've already applied or don't want to work. Case, spaces and legal
+# suffixes are ignored: "GetYourGuide" also blocks "Get Your Guide GmbH".
+#
+# Write one company per line, each starting with "- ":
+#   blocked_companies:
+#     - Example Corp
+#     - Another Company GmbH
+blocked_companies: []

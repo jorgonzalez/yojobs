@@ -4,6 +4,17 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.7.0 — #8 [feat][config] Split the config into a config/ folder of small files
+- `config/`: settings, profile, blocklist, sources, searches and companies in separate
+  files; the same key in two files is an error.
+- Shorter formats: searches as terms × places (shared by LinkedIn and Indeed), company
+  boards grouped by hiring system, sources as `on` / `off`, excluded titles in named groups.
+- Plain-English profile keys (`title_must_have`, `ad_must_mention`, `exclude_titles`,
+  `title_any`, `where:`); the old names still work.
+- A single `config.yaml` still works when there's no `config/`; `--split-config`
+  converts one and checks the result loads to the same configuration.
+- `config.example/` replaces `config.example.yaml`.
+
 ## v0.6.0 — #7 [feat][version] Add version number, --version and changelog
 - `yojobs --version` prints the version; the HTTP User-Agent includes it.
 - This changelog, and version tags for every merged pull request.

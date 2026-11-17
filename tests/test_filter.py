@@ -5,10 +5,10 @@ from pathlib import Path
 import yaml
 
 from yojobs import filter as F
-from yojobs.__main__ import load_config
+from yojobs.config import load_config
 from yojobs.models import Job
 
-PROFILE = load_config(Path(__file__).parent.parent / "config.example.yaml")["profiles"][0]
+PROFILE = load_config(Path(__file__).parent.parent / "config.example")["profiles"][0]
 
 
 def passes(title, description="We run everything on Kubernetes.", location="Germany", remote=True):
