@@ -43,6 +43,9 @@ def main(argv=None) -> int:
     ap.add_argument("--match", metavar="LINK|FILE|-",
                     help="score one job ad against your CV: a link, a .txt/.md/.pdf/.docx/.html file, "
                          "or - for pasted text (e.g. pbpaste | ... --match -)")
+    ap.add_argument("--criteria", metavar="A,B,...",
+                    help="CV match criteria for this run only, e.g. role,skills,gaps,wishes "
+                         "(any of role, skills, seniority, gaps, wishes; overrides config/matching.yaml)")
     ap.add_argument("--cv-check", action="store_true",
                     help="show the CV match setup (CV file, wishes, Ollama) without scoring")
     ap.add_argument("-v", "--verbose", action="store_true",
@@ -56,6 +59,9 @@ def main(argv=None) -> int:
         return split_run(args.config or ROOT / "config.yaml", ROOT / "config")
     cfg = load_config(args.config or default_path(ROOT))
     store = Store(ROOT / cfg.get("database", "seen.sqlite"), key_days=cfg.get("dedupe_days", 60))
+    if args.criteria:  # one-off override of config/matching.yaml
+        cfg["matching"] = dict(cfg.get("matching") or {},
+                               criteria=[c.strip() for c in args.criteria.split(",") if c.strip()])
     if args.cv_check:
         return matching.check(cfg, ROOT)
     if args.match:

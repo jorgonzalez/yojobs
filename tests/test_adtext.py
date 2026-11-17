@@ -127,5 +127,16 @@ class MatchOne(unittest.TestCase):
         self.assertIn("save the page", out)
 
 
+
+class CriteriaOption(unittest.TestCase):
+    def test_overrides_the_config_for_one_run(self):
+        from yojobs import __main__ as m
+        seen = {}
+        with mock.patch.object(m, "load_config", return_value={"matching": {"criteria": ["role"]}}), \
+                mock.patch.object(m.matching, "match_one", lambda cfg, root, arg: seen.update(cfg["matching"]) or 0), \
+                mock.patch.object(m, "Store"):
+            m.main(["--match", "ad.txt", "--criteria", "role, skills,seniority,gaps,wishes"])
+        self.assertEqual(seen["criteria"], ["role", "skills", "seniority", "gaps", "wishes"])
+
 if __name__ == "__main__":
     unittest.main()

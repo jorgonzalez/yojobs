@@ -190,11 +190,12 @@ yojobs can rate each new job against your CV with a local AI model through
 3. Set `enabled: true` in `config/matching.yaml`, then check the setup:
    `.venv/bin/python -m yojobs --cv-check`
 
-The model doesn't invent a number: it rates the criteria in `criteria:` (1 to 4 of
+The model doesn't invent a number: it rates the criteria in `criteria:` (1 to 5 of
 `role`, `skills`, `seniority`, `gaps`, `wishes`; default `[role, skills]`) on fixed
 scales, and yojobs computes the score (fit criteria averaged, `wishes` multiplies, so a
 job that conflicts with your wishes stays low). `cv/wishes.md` is only used when
-`wishes` is in the list. This gives the same result run after run.
+`wishes` is in the list. This gives the same result run after run. To try other
+criteria for one run: `--match <ad> --criteria skills,seniority,gaps,wishes`.
 
 Each new job then gets a line like `CV match 83% · role: good · skills: strong · strong: … · gaps: …`
 plus a one-line summary, and the email lists the best matches first. The score never hides a job. Only
