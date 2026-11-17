@@ -12,9 +12,6 @@ config.yaml:
     searches:
       - {term: "DevOps Manager", location: Berlin}               # on-site/hybrid/remote in Berlin
       - {term: "DevOps Manager", location: Germany, remote: true} # remote within Germany
-
-Note: the endpoints jobdrop uses here are disallowed by the site's robots.txt and
-terms; no account or cookies are involved. See README ("Exception: LinkedIn and Indeed").
 """
 from __future__ import annotations
 
