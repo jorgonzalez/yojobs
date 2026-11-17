@@ -157,7 +157,7 @@ Sr/Jr/Mgr.
 | startupmap | JSON | ~16k EU startup jobs in one request; no descriptions |
 | berlinstartupjobs | RSS | teaser only; full page fetched for title matches |
 | welcometothejungle | sitemaps | job pages are bot-protected, so sitemap URLs only: Berlin jobs, no descriptions |
-| companies | Greenhouse / Lever / Ashby APIs | company career pages, `boards:` as `"system:id"`; ~70 s for 66 companies |
+| companies | Greenhouse / Lever / Ashby APIs | company career pages, `boards:` as `"system:id"`; ~90-115 s for 115 companies |
 | linkedin | jobdrop | searches in config; descriptions fetched only for title/location matches; ~10 min |
 | indeed | jobdrop | one Indeed country per config; descriptions included; fast |
 

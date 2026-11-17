@@ -115,6 +115,20 @@ sources:
       "ashby:lyceum", "greenhouse:solarisbank", "greenhouse:grover", "ashby:forto", "ashby:choco",
       "greenhouse:wolt", "greenhouse:bitpanda", "greenhouse:gocardless", "greenhouse:wise",
       "greenhouse:monzo", "lever:agicap", "ashby:mimica",
+      # cloud / infrastructure / developer tools / security (added 2026-11-17)
+      "greenhouse:harnessinc", "ashby:snyk", "ashby:render", "ashby:railway",
+      "greenhouse:digitalocean98", "greenhouse:fastly", "greenhouse:newrelic",
+      "greenhouse:pagerduty", "greenhouse:launchdarkly", "greenhouse:jfrog", "ashby:coder",
+      "ashby:kubermatic", "greenhouse:platformsh", "ashby:redis", "greenhouse:yugabyte",
+      "greenhouse:starburst", "ashby:prefect", "ashby:astronomer", "ashby:anyscale", "ashby:modal",
+      "greenhouse:cribl", "greenhouse:nebius", "ashby:lambda", "greenhouse:coreweave",
+      "greenhouse:nirmata", "greenhouse:stacklok", "greenhouse:tines", "ashby:vanta",
+      "ashby:drata", "ashby:1password", "greenhouse:bitwarden", "greenhouse:buildkite",
+      "ashby:docker", "ashby:semgrep", "ashby:linear", "greenhouse:figma", "ashby:notion",
+      "ashby:tremendous", "ashby:elevenlabs",
+      # more European tech (added 2026-11-17)
+      "ashby:deepl", "ashby:alephalpha", "ashby:babbel", "ashby:doctolib", "ashby:qonto",
+      "ashby:alan", "ashby:pennylane", "ashby:mollie", "greenhouse:adyen", "lever:spotify",
     ]
 
   # LinkedIn via jobdrop (no account used). Each search = ~2 requests; descriptions
@@ -225,7 +239,7 @@ profiles:
     any_of: []
     all_of: ["Kubernetes|K8s"]
     all_of_in: [title, description, tags]
-    none_of: [Account Executive, Product Manager, Head of Product, Growth, Sales, Marketing, Project Manager, Program Manager, Programme Manager, Procurement]
+    none_of: [Account Executive, Product Manager, Head of Product, Growth, Sales, Marketing, Project Manager, Program Manager, Programme Manager, Procurement, Partner Manager, Alliances, Partnerships]
     exclude_in: [title]
     match_in: [title]          # add description / tags for wider (noisier) matching
     min_score: 1
