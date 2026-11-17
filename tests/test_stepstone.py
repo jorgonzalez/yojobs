@@ -34,6 +34,25 @@ class Parse(unittest.TestCase):
         self.assertEqual(stepstone.slug("München"), "muenchen")
 
 
+    def test_german_summary_of_an_english_ad_is_not_skipped(self):
+        """StepStone's excerpt is German even for English ads; the benefits text decides."""
+        profile = dict(PROFILE, skip_ad_languages=["de"])
+        summary = ("Kleinanzeigen ist Deutschlands meistbesuchte Plattform. Gesucht wird ein Engineering Manager "
+                   "SRE & DevOps, um zwei Teams mit etwa 10 Ingenieuren zu führen und die Plattform sowie die "
+                   "Pipelines zu verantworten. Erfahrung mit Kubernetes und Terraform ist wichtig für die Rolle "
+                   "und wir bieten eine moderne Umgebung mit vielen Möglichkeiten für dich und dein Team.")
+        english = ("<ul><li>We offer flexible working hours and a hybrid setup in our Berlin office</li>"
+                   "<li>You get a learning budget, a great team and the chance to shape our platform</li>"
+                   "<li>We are an equal opportunity employer and we value diversity in all of our teams</li></ul>")
+        german = ("<ul><li>Wir bieten flexible Arbeitszeiten und ein modernes Büro in Berlin für dich</li>"
+                  "<li>Du bekommst ein Weiterbildungsbudget und ein tolles Team mit vielen Möglichkeiten</li>"
+                  "<li>Wir sind ein Arbeitgeber, der Vielfalt schätzt und die Chancengleichheit fördert</li></ul>")
+        base = {"title": "Engineering Manager SRE & DevOps (d/f/m)", "companyName": "kleinanzeigen.de GmbH",
+                "url": "https://www.stepstone.de/stellenangebote--x-1-inline.html", "location": "Berlin",
+                "textSnippet": summary, "skills": [{"name": "Kubernetes"}]}
+        self.assertTrue(jf.apply(stepstone.to_job(dict(base, jobBenefitsHtml=english)), profile))
+        self.assertFalse(jf.apply(stepstone.to_job(dict(base, jobBenefitsHtml=german)), profile))
+
 class Fetch(unittest.TestCase):
     def run_fetch(self, fail=()):
         urls = []

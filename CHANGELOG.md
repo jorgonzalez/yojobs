@@ -4,6 +4,13 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.10.1 — #14 [fix][stepstone] Judge the ad language by the ad's own text, not the summary
+- StepStone's excerpt is its own German summary, even for English ads, so with
+  `skip_ad_languages: [de]` every StepStone job was dropped (0 of 187 matched; e.g.
+  kleinanzeigen.de's "Engineering Manager SRE & DevOps" was lost).
+- The ad text is now benefits section (the ad's own words, in its own language) +
+  excerpt + skills: English ads are kept, German ones still skipped.
+
 ## v0.10.0 — #13 [feat][sources] Add StepStone (search pages, Berlin, excerpt only)
 - New source `stepstone`: one search page per term in `searches.yaml`, in city places
   only (robots.txt disallows its API and "home office" section, so no remote
