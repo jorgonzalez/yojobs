@@ -189,7 +189,16 @@ from them only counts as remote if its location/title/description clearly says s
 (`yojobs/remote.py`); jobs remote only per description are marked "check".
 
 Not supported: sites that block automated access (e.g. hiring.cafe, Wellfound).
-yojobs respects robots.txt and does not work around bot protection.
+yojobs does not work around bot protection, and its own sources respect robots.txt.
+
+**Exception: LinkedIn and Indeed.** These come through the third-party library
+[jobdrop](https://pypi.org/project/jobdrop/), which uses LinkedIn's logged-out job
+search (`/jobs-guest/...`) and Indeed's mobile API (`apis.indeed.com`). Both sites'
+robots.txt disallow automated access there, and their terms forbid it. No account,
+login or cookies are used, so your profile isn't involved; the realistic risk is a
+temporary block of your IP on their logged-out pages. They're enabled in the example
+config; set `enabled: false` under `linkedin:` / `indeed:` to leave them out, and use
+the sites' own email job alerts instead.
 
 ### Adding a company
 
