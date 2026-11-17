@@ -188,3 +188,7 @@ in `yojobs/sources/__init__.py`, and add `<name>: {enabled: true}` under `source
 ```sh
 .venv/bin/python -m unittest discover tests
 ```
+
+## License
+
+GPL-3.0, see [LICENSE](LICENSE).
