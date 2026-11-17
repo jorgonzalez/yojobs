@@ -241,3 +241,55 @@ def check(cfg: dict, root: Path) -> int:
         ok = s["model"] in models or f"{s['model']}:latest" in models
         print(f"Ollama: running; model {s['model']} {'installed' if ok else 'NOT installed (ollama pull ' + s['model'] + ')'}")
     return 0
+
+
+def match_one(cfg: dict, root: Path, arg: str) -> int:
+    """--match <link | file | ->: score one ad against the CV and print the result.
+    Works even when automatic matching is off; nothing is saved or emailed."""
+    from . import adtext  # lazy: only needed here
+    s = settings(cfg)
+    try:
+        cv_file, cv, wishes = load_cv(root, s)
+    except Exception as exc:
+        print(f"Can't read the CV: {exc}")
+        return 1
+    if not cv_file:
+        print(f"No CV in {s['cv_dir']}/ (a .md, .txt, .docx or .pdf file).")
+        return 1
+    models = ollama_models(s)
+    if models is None:
+        print(f"Ollama isn't running at {s['ollama_url']} (start it: ./scripts/ollama-ctl.sh start).")
+        return 1
+    if s["model"] not in models and f"{s['model']}:latest" not in models:
+        print(f"Model {s['model']} isn't installed (ollama pull {s['model']}).")
+        return 1
+    try:
+        job = adtext.load(arg)
+    except adtext.BlockedError as exc:
+        print(f"Couldn't read the ad: {exc}.\nInstead, {adtext.SAVE_HINT}")
+        return 1
+    except Exception as exc:
+        print(f"Couldn't read the ad: {type(exc).__name__}: {exc}")
+        return 1
+    words = len(job.description.split())
+    print(f"Ad:      {job.title or '(no title found)'}" + (f" — {job.company}" if job.company else ""))
+    if job.location:
+        print(f"Where:   {job.location}")
+    print(f"Text:    {words} words" + ("  (very little: the page may not have loaded the ad; "
+                                       "try saving it from the browser)" if words < 80 else ""))
+    if not words:
+        return 1
+    note(f"Asking {s['model']} (usually 15-40 s)...")
+    try:
+        m = ask(s, cv, wishes, job)
+    except Exception as exc:
+        print(f"The model couldn't score it: {type(exc).__name__}: {exc}")
+        return 1
+    print(f"\nCV match {m['score']}%")
+    if m.get("strengths"):
+        print("  strong: " + ", ".join(m["strengths"]))
+    if m.get("gaps"):
+        print("  gaps:   " + ", ".join(m["gaps"]))
+    if m.get("summary"):
+        print(f"  {m['summary']}")
+    return 0

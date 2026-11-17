@@ -40,6 +40,9 @@ def main(argv=None) -> int:
                     help="build the weekly summary now (print it; with --email, send it)")
     ap.add_argument("--split-config", action="store_true",
                     help="convert config.yaml into the config/ folder (checks the result is identical)")
+    ap.add_argument("--match", metavar="LINK|FILE|-",
+                    help="score one job ad against your CV: a link, a .txt/.md/.pdf/.docx/.html file, "
+                         "or - for pasted text (e.g. pbpaste | ... --match -)")
     ap.add_argument("--cv-check", action="store_true",
                     help="show the CV match setup (CV file, wishes, Ollama) without scoring")
     ap.add_argument("-v", "--verbose", action="store_true",
@@ -55,6 +58,8 @@ def main(argv=None) -> int:
     store = Store(ROOT / cfg.get("database", "seen.sqlite"), key_days=cfg.get("dedupe_days", 60))
     if args.cv_check:
         return matching.check(cfg, ROOT)
+    if args.match:
+        return matching.match_one(cfg, ROOT, args.match)
     if args.scheduled or args.check_schedule:
         return scheduled(args, cfg, store)
 

@@ -195,6 +195,21 @@ summary, and the email lists the best matches first. The score never hides a job
 jobs about to be emailed are scored (~15–20 s each on an M2), each one once; jobs
 without ad text get no score. If Ollama isn't running, the email just has no scores.
 
+### Scoring one job ad: `--match`
+
+```sh
+.venv/bin/python -m yojobs --match https://jobs.ashbyhq.com/company/<id>   # a link
+.venv/bin/python -m yojobs --match ~/Downloads/job.pdf                     # .txt .md .pdf .docx .html
+pbpaste | .venv/bin/python -m yojobs --match -                             # copied text
+```
+
+Prints the ad's title, company, place and how much text was found, then the CV match
+(score, strengths, gaps, summary). Nothing is saved or emailed, and it works even when
+automatic matching is off (it needs the CV and Ollama). Links to Greenhouse, Lever,
+Ashby, Personio and Recruitee use their official APIs; other pages are read from their
+embedded job data or visible text. If a site blocks it (e.g. StepStone job pages),
+save the page from the browser (File → Save As… or Print → Save as PDF) and pass the file.
+
 ### Starting and stopping Ollama
 
 Ollama doesn't have to run all the time. From your yojobs folder:
