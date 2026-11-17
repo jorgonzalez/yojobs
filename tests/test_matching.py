@@ -95,6 +95,22 @@ class Scoring(Base):
         self.assertEqual(j.match["score"], 100)
 
 
+    def test_asks_for_enough_context(self):
+        self.cv()
+        calls, _ = self.run_scoring([job()])
+        self.assertEqual(calls[0]["options"]["num_ctx"], 16384)
+
+    def test_empty_answer_is_reported_not_crashing(self):
+        self.cv()
+        j = job()
+        with mock.patch.object(matching, "ollama_models", return_value=["gpt-oss:20b"]), \
+                mock.patch.object(matching, "_post", lambda *a: {"message": {"content": ""}, "done_reason": "length"}), \
+                mock.patch.object(matching, "note") as note:
+            matching.score_jobs([j], ROOT_CFG, self.root, self.db)
+        self.assertIsNone(j.match)
+        self.assertIn("no answer", note.call_args[0][0])
+        self.assertIn("context_tokens", note.call_args[0][0])
+
 class Output(unittest.TestCase):
     def test_sorting_and_lines(self):
         a, b, c = job("A"), job("B"), job("C")

@@ -4,6 +4,12 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.9.1 — #11 [fix][matching] Give Ollama enough context for a full CV
+- Requests now set `num_ctx` (`context_tokens`, default 16384). Ollama's default room
+  (~2048 tokens) silently cut a real CV + ad (~4,600 tokens), and the model returned
+  an empty answer, so the job was emailed without a score.
+- An empty model answer is now reported as such, with a hint, instead of a JSON error.
+
 ## v0.9.0 — #10 [feat][matching] Login question and Desktop icon to start/stop Ollama
 - `scripts/install-ollama-prompt.sh`: after every login, asks "Start Ollama for the
   yojobs CV match?" (closes by itself after 2 minutes; skipped if Ollama is running).
