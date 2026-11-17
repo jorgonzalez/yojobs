@@ -119,6 +119,11 @@ A job is reported if it passes **any** profile. Checks, in order:
 
 Matching is case-insensitive and whole-word; a space also matches a hyphen.
 
+To never hear from some companies (already applied, not interested), list them under
+`blocked_companies:` (top level of config.yaml). Case, spaces and legal suffixes are
+ignored, so `GetYourGuide` also blocks "Get Your Guide GmbH". Blocked jobs are never
+emailed and never listed as near misses.
+
 Sources without job descriptions (marked below) can't check `all_of`: their jobs are
 kept and marked "<word> not verified" in the email.
 
