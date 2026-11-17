@@ -38,30 +38,71 @@ DEFAULTS = {
     # Room for CV + wishes + ad + answer. Ollama's default can be as low as 2048 tokens,
     # which silently cuts the prompt (a ~1,000-word CV plus an ad is ~4,500 tokens).
     "context_tokens": 16384,
+    # What the model rates (1 to 4 of CRITERIA, one request either way); yojobs computes
+    # the score from the ratings, which is far more stable than asking for a number.
+    "criteria": ["role", "skills"],
 }
 CV_NAMES = ["cv.md", "cv.txt", "cv.docx", "cv.pdf"]
 CV_SUFFIXES = (".md", ".txt", ".docx", ".pdf")
-PROMPT_VERSION = 2  # bump when the prompt changes, so cached scores are recomputed
+PROMPT_VERSION = 3  # bump when the prompt changes, so cached scores are recomputed
 
-SCHEMA = {"type": "object", "required": ["score", "strengths", "gaps", "summary"], "properties": {
-    "score": {"type": "integer", "minimum": 0, "maximum": 100},
-    "strengths": {"type": "array", "items": {"type": "string"}, "maxItems": 3},
-    "gaps": {"type": "array", "items": {"type": "string"}, "maxItems": 3},
-    "summary": {"type": "string"}}}
+# name -> (question for the model, levels from best to worst)
+FIT = ["strong", "good", "partial", "weak"]
+CRITERIA = {
+    "role": ("Role fit: can the candidate do this job? Skills, experience and seniority "
+             "against the job's requirements.", FIT),
+    "skills": ("Skills fit: the technical and domain skills the job requires.", FIT),
+    "seniority": ("Seniority fit: the leadership level, scope and team size the job asks for.", FIT),
+    "gaps": ("Must-have gaps: how much of what the job requires does the CV not show?",
+             ["none", "minor", "some", "major"]),
+    "wishes": ("Wishes fit: does the job offer what the candidate wants and avoid what they "
+               "don't want (see the candidate's wishes)?", ["matches", "neutral", "some conflict", "conflicts"]),
+}
+LEVEL_VALUE = [1.0, 0.75, 0.45, 0.15]   # fit criteria: best .. worst
+WISHES_FACTOR = [1.0, 0.88, 0.62, 0.3]  # wishes multiplies: a conflict keeps the score low
 
-PROMPT = """You compare a candidate's CV with a job ad and rate the fit from 0 to 100.
+
+def criteria(s: dict) -> List[str]:
+    """The configured criteria, or the default if the setting is invalid."""
+    chosen = [c for c in dict.fromkeys(s.get("criteria") or []) if c in CRITERIA]
+    if not 1 <= len(chosen) <= 4 or len(chosen) != len(s.get("criteria") or []):
+        note(f"CV match: criteria must be 1-4 of {', '.join(CRITERIA)}; using {DEFAULTS['criteria']}")
+        return list(DEFAULTS["criteria"])
+    return chosen
+
+
+def schema(names: List[str]) -> dict:
+    props = {n: {"type": "string", "enum": CRITERIA[n][1]} for n in names}
+    props.update({"strengths": {"type": "array", "items": {"type": "string"}, "maxItems": 3},
+                  "gaps_list": {"type": "array", "items": {"type": "string"}, "maxItems": 3},
+                  "summary": {"type": "string"}})
+    return {"type": "object", "required": list(props), "properties": props}
+
+
+def compute_score(ratings: dict) -> int:
+    """Average of the fit criteria, multiplied by the wishes factor."""
+    fit = [LEVEL_VALUE[CRITERIA[n][1].index(v)] for n, v in ratings.items() if n != "wishes"]
+    score = sum(fit) / len(fit) if fit else 1.0
+    if "wishes" in ratings:
+        score *= WISHES_FACTOR[CRITERIA["wishes"][1].index(ratings["wishes"])]
+    return round(100 * score)
+
+
+PROMPT = """You compare a candidate's CV with a job ad. Rate it on these criteria:
+
+{criteria}
 
 Rules:
 - Use only facts written in the CV. Never invent experience the CV doesn't state.
-- Strengths: the job's main requirements that the CV clearly meets.
-- Gaps: only the job's main, must-have requirements that the CV doesn't show (e.g. a
-  required language, technology or kind of experience). Ignore nice-to-haves, tools
-  named in passing and the company's own products. No gaps is a valid answer.
-- Take the candidate's wishes into account: a job that goes against them scores low
-  even if the skills match.
-- Strengths and gaps: at most 3 each, short phrases (max 6 words).
-- Summary: one sentence addressed to the candidate as "you".
-- Score guide: 85-100 excellent fit, 70-84 good, 50-69 partial, below 50 weak.
+- Before calling anything missing, search the CV for it, including other wordings
+  (e.g. "cloud cost optimisation" = FinOps). If the CV shows it, it is not missing.
+- The candidate's wishes: what the job offers that the candidate wants (e.g. remote
+  work, async culture) counts in favour. Only rate a conflict when the job clearly goes
+  against a wish (e.g. on-site in a city the candidate won't move to).
+- strengths: the job's main requirements the CV clearly meets (max 3, max 6 words each).
+- gaps_list: only must-have requirements the CV doesn't show (max 3, max 6 words each);
+  ignore nice-to-haves, tools named in passing and the company's own products. Empty is fine.
+- summary: one sentence addressed to the candidate as "you".
 
 === CV ===
 {cv}
@@ -135,10 +176,12 @@ def ollama_models(s: dict) -> Optional[List[str]]:
 
 
 def ask(s: dict, cv: str, wishes: str, job: Job) -> dict:
-    prompt = PROMPT.format(cv=cv, wishes=wishes or "(none given)", title=job.title, company=job.company,
-                           location=job.location, description=job.description[:12000])
+    names = criteria(s)
+    listing = "\n".join(f"- {n}: {CRITERIA[n][0]} One of: {', '.join(CRITERIA[n][1])}." for n in names)
+    prompt = PROMPT.format(criteria=listing, cv=cv, wishes=wishes or "(none given)", title=job.title,
+                           company=job.company, location=job.location, description=job.description[:12000])
     body = {"model": s["model"], "messages": [{"role": "user", "content": prompt}], "stream": False,
-            "format": SCHEMA, "options": {"temperature": 0, "num_ctx": int(s["context_tokens"])}}
+            "format": schema(names), "options": {"temperature": 0, "num_ctx": int(s["context_tokens"])}}
     if s.get("think"):
         body["think"] = s["think"]
     out = _post(s["ollama_url"].rstrip("/") + "/api/chat", body, float(s["timeout_seconds"]))
@@ -147,8 +190,9 @@ def ask(s: dict, cv: str, wishes: str, job: Job) -> dict:
         raise RuntimeError(f"the model returned no answer (done_reason: {out.get('done_reason', '?')}); "
                            f"if the prompt was cut off, raise context_tokens in config/matching.yaml")
     result = json.loads(content)
-    result["score"] = max(0, min(100, int(result["score"])))
-    return {k: result.get(k) for k in ("score", "strengths", "gaps", "summary")}
+    ratings = {n: result[n] for n in names}
+    return {"score": compute_score(ratings), "ratings": ratings, "strengths": result.get("strengths") or [],
+            "gaps": result.get("gaps_list") or [], "summary": result.get("summary") or ""}
 
 
 # --- cache -------------------------------------------------------------------
@@ -172,7 +216,8 @@ class Cache:
 
 
 def fingerprint(cv: str, wishes: str, s: dict) -> str:
-    return hashlib.sha256(f"{PROMPT_VERSION}|{s['model']}|{s.get('think')}|{cv}|{wishes}".encode()).hexdigest()[:16]
+    key = f"{PROMPT_VERSION}|{s['model']}|{s.get('think')}|{','.join(s.get('criteria') or [])}|{cv}|{wishes}"
+    return hashlib.sha256(key.encode()).hexdigest()[:16]
 
 
 # --- main entry --------------------------------------------------------------
@@ -285,7 +330,7 @@ def match_one(cfg: dict, root: Path, arg: str) -> int:
     except Exception as exc:
         print(f"The model couldn't score it: {type(exc).__name__}: {exc}")
         return 1
-    print(f"\nCV match {m['score']}%")
+    print(f"\nCV match {m['score']}%  (" + ", ".join(f"{k}: {v}" for k, v in m["ratings"].items()) + ")")
     if m.get("strengths"):
         print("  strong: " + ", ".join(m["strengths"]))
     if m.get("gaps"):

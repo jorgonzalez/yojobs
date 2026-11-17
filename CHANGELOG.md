@@ -4,6 +4,18 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.12.0 — #16 [feat][matching] Score from rated criteria instead of a free 0-100 number
+- The model rates 1 to 4 criteria (`criteria:` in matching.yaml; default
+  `[role, skills]`) on fixed scales, and yojobs computes the score: fit criteria
+  averaged, `wishes` multiplies. Available: role, skills, seniority, gaps, wishes.
+- The same job scored 55, 80, 90, 92 and 78 with the old free number; with ratings,
+  four jobs gave identical results in 3 runs each, and two bad fits scored 4%.
+- Prompt: check the CV for other wordings before calling something missing (e.g.
+  FinOps); what the wishes ask for (remote, async) counts in favour, and only a clear
+  contradiction is a conflict.
+- Email and `--match` show the ratings, e.g. "CV match 83% · role: good · skills: strong".
+  Cached scores are recomputed (prompt version 3).
+
 ## v0.11.0 — #15 [feat][matching] Score any job ad against your CV with --match
 - `--match <link | file | ->` scores one ad with the local model and prints title,
   company, place, how much text was found, the score, strengths, gaps and summary.
