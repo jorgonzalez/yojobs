@@ -26,6 +26,7 @@ from __future__ import annotations
 import re
 from typing import Dict, Iterable, List, Pattern
 
+from . import language
 from .models import Job
 
 _cache: Dict[str, Pattern] = {}
@@ -104,6 +105,15 @@ def apply(job: Job, profile: dict, check_all_of: bool = True) -> bool:
 
     if _hits(profile.get("none_of") or [], _text(job, exclude_in)):
         return False
+
+    # language: ads written in a skipped language, or requiring fluency in one
+    # (needs the ad text: jobs without a description are kept)
+    if job.description and profile.get("skip_ad_languages"):
+        if language.ad_language(job.description) in profile["skip_ad_languages"]:
+            return False
+    for lang in profile.get("skip_if_requires") or []:
+        if language.requires(job.description, lang):
+            return False
 
     all_of = profile.get("all_of") or []
     all_text = _text(job, profile.get("all_of_in") or ["title", "description", "tags"])

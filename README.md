@@ -113,6 +113,8 @@ A job is reported if it passes **any** profile. Checks, in order:
 | `any_of` | extra OR words; each distinct match adds +1 to the score |
 | `min_score` | if `any_of` is set, at least this many distinct matches |
 | `match_in` | fields to match: `title`, `description`, `tags`, `company`, `location` |
+| `skip_ad_languages` | drop ads written in these languages, e.g. `[de]` (bilingual ads are kept) |
+| `skip_if_requires` | drop ads requiring fluency, e.g. `[German]` ("fluent German", "Deutsch C1"; not "German is a plus") |
 
 Matching is case-insensitive and whole-word; a space also matches a hyphen.
 

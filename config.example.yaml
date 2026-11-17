@@ -250,6 +250,12 @@ profiles:
     #    or be plain "Remote". "Remote, Ireland" or "USA only" are dropped.
     #    An empty list accepts remote jobs from anywhere.
     remote_regions: [Germany, Deutschland, Europe, European, EU, EMEA, CET, Worldwide, Anywhere, Global]
+    # Language (needs the ad text; jobs from sources without descriptions are kept):
+    #  - skip ads written in these languages (de = German; bilingual ads are kept)
+    # skip_ad_languages: [de]
+    #  - skip ads that require fluency in a language ("fluent German", "Deutsch C1",
+    #    "verhandlungssicheres Deutsch"); "German is a plus" does not count
+    # skip_if_requires: [German]
 
   # --- More example profiles (uncomment and adapt) ---------------------------
 
