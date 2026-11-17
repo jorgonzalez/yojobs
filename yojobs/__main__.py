@@ -66,15 +66,24 @@ def main(argv=None) -> int:
     if args.scheduled or args.check_schedule:
         return scheduled(args, cfg, store)
 
-    if args.days is not None:
-        days = args.days
-    elif store.is_empty():
-        days = cfg.get("first_run_days", 30)
-        say(f"First run (no jobs remembered yet): looking back {days:g} days instead of {cfg.get('max_age_days', 3):g}")
-    else:
-        days = cfg.get("max_age_days", 3)
-    code, _ok = run(args, cfg, store, days)
-    return code
+    # Manual runs take the same lock as scheduled ones, so they never overlap
+    # (two runs at once could email the same jobs twice).
+    lock = RunLock(ROOT / "yojobs.lock")
+    if not lock.acquire():
+        say("Another yojobs run is in progress (manual or scheduled); try again when it has finished")
+        return 1
+    try:
+        if args.days is not None:
+            days = args.days
+        elif store.is_empty():
+            days = cfg.get("first_run_days", 30)
+            say(f"First run (no jobs remembered yet): looking back {days:g} days instead of {cfg.get('max_age_days', 3):g}")
+        else:
+            days = cfg.get("max_age_days", 3)
+        code, _ok = run(args, cfg, store, days)
+        return code
+    finally:
+        lock.release()
 
 
 def scheduled(args, cfg: dict, store: Store) -> int:
