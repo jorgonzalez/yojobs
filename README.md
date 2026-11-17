@@ -139,6 +139,7 @@ Sr/Jr/Mgr.
 | name | type | notes |
 |---|---|---|
 | remotive | JSON API | max ~4 requests/day; public feed is 24h delayed and small |
+| remoteok | JSON API | latest ~100, mostly US-focused; terms: credit Remote OK + link to the job |
 | himalayas | JSON API | keyword search (one query per `all_of` word); rate-limited, ~2 min |
 | jobicy | JSON API | latest 100; optional `geo` |
 | weworkremotely | RSS | optional category feed `url` |

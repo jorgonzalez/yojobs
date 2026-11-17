@@ -66,6 +66,7 @@ dedupe_days: 60
 sources:
   # Remote-only boards
   remotive:       {enabled: true}   # max ~4 runs/day per Remotive's terms
+  remoteok:       {enabled: true}   # latest ~100; terms: credit Remote OK + link to the job (the email does)
   himalayas:      {enabled: true, max_pages: 20}
     # searches each required keyword (all_of) and stops once jobs are older than
     # the window; mode: browse reads the general feed instead (slower, fewer hits)

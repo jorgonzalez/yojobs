@@ -4,10 +4,11 @@ To add a portal: create a module here and register it in SOURCES.
 """
 from __future__ import annotations
 
-from . import berlinstartupjobs, companies, euremotejobs, fourdayweek, hackernews, himalayas, indeed, jobicy, landingjobs, linkedin, remotive, startupmap, welcometothejungle, weworkremotely, workingnomads
+from . import berlinstartupjobs, companies, euremotejobs, fourdayweek, hackernews, himalayas, indeed, jobicy, landingjobs, linkedin, remoteok, remotive, startupmap, welcometothejungle, weworkremotely, workingnomads
 
 SOURCES = {
     "remotive": remotive.fetch,
+    "remoteok": remoteok.fetch,
     "himalayas": himalayas.fetch,
     "jobicy": jobicy.fetch,
     "weworkremotely": weworkremotely.fetch,
