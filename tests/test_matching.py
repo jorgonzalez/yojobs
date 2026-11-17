@@ -109,8 +109,9 @@ class Scoring(Base):
     def test_invalid_criteria_fall_back_to_default(self):
         with mock.patch.object(matching, "note") as note:
             self.assertEqual(matching.criteria({"criteria": ["role", "salary"]}), ["role", "skills"])
-            self.assertEqual(matching.criteria({"criteria": ["role", "skills", "seniority", "gaps", "wishes"]}),
-                             ["role", "skills"])
+            self.assertEqual(matching.criteria({"criteria": ["role", "role", "skills"]}), ["role", "skills"])
+        self.assertEqual(matching.criteria({"criteria": ["role", "skills", "seniority", "gaps", "wishes"]}),
+                         ["role", "skills", "seniority", "gaps", "wishes"])  # all five is allowed
         self.assertTrue(note.called)
         self.assertEqual(matching.criteria({"criteria": ["role"]}), ["role"])
 

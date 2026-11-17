@@ -4,6 +4,12 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.13.0 — #17 [feat][matching] Add --criteria for one run; allow all five criteria
+- `--criteria role,skills,gaps,wishes` overrides `criteria:` from matching.yaml for one
+  run (with `--match` or a normal run).
+- Up to 5 criteria (was 4), so all of role, skills, seniority, gaps, wishes can be
+  rated together (role already covers skills + seniority, so they then count twice).
+
 ## v0.12.0 — #16 [feat][matching] Score from rated criteria instead of a free 0-100 number
 - The model rates 1 to 4 criteria (`criteria:` in matching.yaml; default
   `[role, skills]`) on fixed scales, and yojobs computes the score: fit criteria

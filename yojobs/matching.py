@@ -38,7 +38,7 @@ DEFAULTS = {
     # Room for CV + wishes + ad + answer. Ollama's default can be as low as 2048 tokens,
     # which silently cuts the prompt (a ~1,000-word CV plus an ad is ~4,500 tokens).
     "context_tokens": 16384,
-    # What the model rates (1 to 4 of CRITERIA, one request either way); yojobs computes
+    # What the model rates (1 to 5 of CRITERIA, one request either way); yojobs computes
     # the score from the ratings, which is far more stable than asking for a number.
     "criteria": ["role", "skills"],
 }
@@ -65,8 +65,8 @@ WISHES_FACTOR = [1.0, 0.88, 0.62, 0.3]  # wishes multiplies: a conflict keeps th
 def criteria(s: dict) -> List[str]:
     """The configured criteria, or the default if the setting is invalid."""
     chosen = [c for c in dict.fromkeys(s.get("criteria") or []) if c in CRITERIA]
-    if not 1 <= len(chosen) <= 4 or len(chosen) != len(s.get("criteria") or []):
-        note(f"CV match: criteria must be 1-4 of {', '.join(CRITERIA)}; using {DEFAULTS['criteria']}")
+    if not chosen or len(chosen) != len(s.get("criteria") or []):
+        note(f"CV match: criteria must be 1-5 of {', '.join(CRITERIA)}; using {DEFAULTS['criteria']}")
         return list(DEFAULTS["criteria"])
     return chosen
 
