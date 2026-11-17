@@ -58,6 +58,14 @@ email:
 database: seen.sqlite
 dedupe_days: 60
 
+# Companies whose jobs are never emailed (and never listed as near misses), e.g.
+# where you've already applied or don't want to work. Matched like duplicates:
+# case, spaces and legal suffixes are ignored ("GetYourGuide" also blocks
+# "Get Your Guide GmbH").
+blocked_companies: []
+#   - Example Corp
+#   - Another Company GmbH
+
 # ---------------------------------------------------------------------------
 # Weekly summary and source health
 # ---------------------------------------------------------------------------

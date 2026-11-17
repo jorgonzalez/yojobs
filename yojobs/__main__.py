@@ -22,7 +22,7 @@ from . import progress
 from .progress import note, say, step
 from .schedule import RunLock, State, is_due, trim_log
 from .sources import SOURCES
-from .store import Store
+from .store import Store, norm_company
 
 ROOT = Path(__file__).resolve().parent.parent  # repo dir; launchd runs from elsewhere
 
@@ -154,6 +154,11 @@ def send_weekly(args, cfg: dict, store: Store) -> int:
     return 0
 
 
+def _company_key(name: str) -> str:
+    """'GetYourGuide' == 'Get Your Guide GmbH' == 'getyourguide'."""
+    return norm_company(name).replace(" ", "")
+
+
 def run(args, cfg: dict, store: Store, days: float):
     """One full pass. Returns (exit code, ok) where ok means the run did its job."""
     since = datetime.now(timezone.utc) - timedelta(days=days)
@@ -178,6 +183,8 @@ def run(args, cfg: dict, store: Store, days: float):
         selected[name] = scfg
 
     results, stats, source_runs, near = [], [], [], []
+    # companies you never want to hear from (applied already, not interested...)
+    blocked = {_company_key(c) for c in cfg.get("blocked_companies") or [] if str(c).strip()}
     say(f"Checking {len(selected)} sources for jobs from the last {days:.3g} days")
     for i, (name, scfg) in enumerate(selected.items(), 1):
         t0 = time.time()
@@ -191,6 +198,8 @@ def run(args, cfg: dict, store: Store, days: float):
             note(f"[{i}/{len(selected)}] {name}: ERROR {type(exc).__name__}: {exc}")
             continue
         recent = [j for j in jobs if j.published is None or j.published >= since]
+        if blocked:
+            recent = [j for j in recent if _company_key(j.company) not in blocked]
         if args.all:
             kept = recent
         else:
