@@ -195,6 +195,22 @@ summary, and the email lists the best matches first. The score never hides a job
 jobs about to be emailed are scored (~15–20 s each on an M2), each one once; jobs
 without ad text get no score. If Ollama isn't running, the email just has no scores.
 
+### Starting and stopping Ollama
+
+Ollama doesn't have to run all the time. From your yojobs folder:
+
+```sh
+./scripts/install-ollama-prompt.sh   # after every login: "Start Ollama for the yojobs CV match?"
+./scripts/make-ollama-app.sh         # an "Ollama" icon on the Desktop: double-click to start/stop
+./scripts/ollama-ctl.sh status       # or start / stop, from the terminal
+```
+
+The login question closes by itself after 2 minutes and isn't shown if Ollama is
+already running; remove it with `./scripts/uninstall-ollama-prompt.sh`. The Desktop
+app calls the scripts in the folder it was created from, so create it from the
+folder yojobs runs in (re-run the script if you move the repo). You can drag it to
+the Dock. Ollama's own log: `~/Library/Logs/ollama.log`.
+
 ## Duplicates
 
 A job is never emailed twice: its URL is remembered forever, and its normalized
