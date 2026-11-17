@@ -223,6 +223,16 @@ in `yojobs/sources/__init__.py`, and add `<name>: {enabled: true}` under `source
 .venv/bin/python -m unittest discover tests
 ```
 
+## Versions
+
+`yojobs --version` prints the version. Every merged pull request is one version,
+tagged `vX.Y.Z` on its merge commit and listed in [CHANGELOG.md](CHANGELOG.md):
+
+- PR titles follow `[type][scope] summary` (max 80 characters)
+- `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]`... the patch (0.5.0 → 0.5.1)
+- the PR itself bumps `__version__` in `yojobs/__init__.py` and adds its CHANGELOG entry;
+  after merging, the merge commit gets the tag
+
 ## License
 
 GPL-3.0, see [LICENSE](LICENSE).

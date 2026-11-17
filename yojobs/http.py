@@ -7,7 +7,9 @@ import urllib.parse
 import urllib.request
 from typing import Any, Optional
 
-USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) yojobs/0.1 (personal job alert)"
+from . import __version__
+
+USER_AGENT = f"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) yojobs/{__version__} (personal job alert)"
 TIMEOUT = 30
 RETRIES = 3
 
