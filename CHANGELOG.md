@@ -4,6 +4,17 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.11.0 — #15 [feat][matching] Score any job ad against your CV with --match
+- `--match <link | file | ->` scores one ad with the local model and prints title,
+  company, place, how much text was found, the score, strengths, gaps and summary.
+  Nothing is saved or emailed; works even when automatic matching is off.
+- Links: Greenhouse, Lever, Ashby, Personio and Recruitee through their official
+  APIs; other pages through their embedded JobPosting data, else the visible text.
+  Blocked pages (403/429, bot checks, timeouts) aren't worked around: yojobs says to
+  save the page from the browser and use the file.
+- Files: .txt, .md, .pdf, .docx, .html (a page saved from the browser); `-` reads
+  pasted text, e.g. `pbpaste | python -m yojobs --match -`.
+
 ## v0.10.1 — #14 [fix][stepstone] Judge the ad language by the ad's own text, not the summary
 - StepStone's excerpt is its own German summary, even for English ads, so with
   `skip_ad_languages: [de]` every StepStone job was dropped (0 of 187 matched; e.g.
