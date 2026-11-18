@@ -4,6 +4,11 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.13.6 — #23 [chore][ci] Run the tests on GitHub for every pull request
+- GitHub Actions workflow (`.github/workflows/tests.yml`): installs the requirements on
+  Ubuntu with Python 3.12 and runs the unit tests on every pull request and push to
+  main; the result shows as a ✅/❌ check on the pull request.
+
 ## v0.13.5 — #22 [fix][schedule] Check every 10 minutes so runs start soon after the Mac wakes
 - launchd's interval timer doesn't fire while the Mac sleeps, so with 30-minute checks
   a due run could wait up to 30 minutes after waking (13:15 check slept through,
