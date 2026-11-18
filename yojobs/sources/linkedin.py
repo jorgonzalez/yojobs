@@ -41,10 +41,65 @@ def _str(value) -> str:
     return "" if value is None or value != value else str(value)
 
 
+class Throttle:
+    """Set when LinkedIn answers 429 (too many requests) to any request of this run."""
+
+    def __init__(self):
+        self.hit = False
+        self.at = ""
+
+
+def gentle_session_factory(create_session, throttle: Throttle):
+    """Wrap jobdrop's create_session: no retries on 429 and no obeying Retry-After
+    (jobdrop's default retried 429s 3x with backoff, honouring LinkedIn's Retry-After,
+    which stalled single searches for ~15 minutes), short retries for 5xx only, and
+    a response hook that records any 429."""
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+
+    def make(*args, **kwargs):
+        kwargs["has_retry"] = False
+        session = create_session(*args, **kwargs)
+        retry = Retry(total=2, connect=2, read=1, status=2, status_forcelist=[500, 502, 503, 504],
+                      backoff_factor=2, respect_retry_after_header=False, raise_on_status=False)
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+
+        def record(response, *a, **k):
+            if response.status_code == 429:
+                throttle.hit = True
+        session.hooks["response"].append(record)
+        return session
+    return make
+
+
+def rotated(searches: list, now: float = None) -> list:
+    """Start at a different search each run (runs are >= 5 h apart), so if LinkedIn
+    throttles a run and the rest are skipped, the next run covers them first."""
+    if not searches:
+        return []
+    start = int((now if now is not None else time.time()) // (4 * 3600)) % len(searches)
+    return searches[start:] + searches[:start]
+
+
 def fetch(cfg, since):
+    import jobdrop.linkedin as jl
     from jobdrop import scrape_jobs, set_logger_level  # heavy import, only when enabled
     from jobdrop.linkedin import LinkedIn
     from jobdrop.model import DescriptionFormat
+
+    throttle = Throttle()
+    original = jl.create_session
+    jl.create_session = gentle_session_factory(original, throttle)
+    try:
+        return _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionFormat, throttle)
+    finally:
+        jl.create_session = original
+
+
+def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionFormat, throttle):
+    problems = cfg.get("_problems")
 
     # jobdrop warnings would break the one-line status display in quiet mode
     set_logger_level(logging.WARNING if is_verbose() else logging.ERROR)
@@ -52,8 +107,15 @@ def fetch(cfg, since):
     title_ok = cfg.get("_title_ok") or (lambda job: True)
 
     jobs = {}
-    searches = cfg.get("searches") or []
+    searches = rotated(cfg.get("searches") or [])
     for i, s in enumerate(searches):
+        if throttle.hit:
+            msg = (f"LinkedIn said 'too many requests' (429) after {i}/{len(searches)} searches; "
+                   f"skipped the other {len(searches) - i} this run (the next run starts with them)")
+            note(f"linkedin: {msg}")
+            if problems is not None:
+                problems.append(("throttled", msg))
+            break
         if i:
             time.sleep(random.uniform(4, 8))
         where = f"{s.get('location') or 'anywhere'}{' (remote)' if s.get('remote') else ''}"
@@ -96,6 +158,9 @@ def fetch(cfg, since):
         li = LinkedIn()
         li.scraper_input = SimpleNamespace(description_format=DescriptionFormat.MARKDOWN)
         for n, job in enumerate(candidates):
+            if throttle.hit:
+                note(f"linkedin: 'too many requests' (429); skipped {len(candidates) - n} descriptions this run")
+                break
             if n:
                 time.sleep(random.uniform(2, 5))
             say(f"    linkedin description {n + 1}/{len(candidates)}: {job.title[:60]}")
