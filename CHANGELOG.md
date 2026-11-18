@@ -4,6 +4,13 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.20.1 — #33 [fix][dedupe] Read bracketed title parts when only one title has them
+- "Head of Platform (Infrastructure & DevOps)" (StartupMap) and "Head of Platform –
+  Infrastructure, DevOps" (Remote Rocketship) weren't recognised as the same Mimica job:
+  the bracketed part was always ignored. Titles are now compared with and without the
+  brackets when only one has them (closer result counts), and with them when both do,
+  so "EM (Platform)" vs "EM (Data)" are no longer merged either.
+
 ## v0.20.0 — #32 [feat][sources] Add Remote Rocketship from its job sitemaps
 - New source `remoterocketship`: its English job sitemaps (worldwide + rest of world,
   3 requests, ~50,000 URLs); keeps jobs updated within the window whose URL says they're

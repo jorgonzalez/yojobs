@@ -102,11 +102,13 @@ class SimilarTitles(unittest.TestCase):
         from yojobs.store import similar_titles
         same = [("Hands-on Engineering Manager, Infrastructure", "Hands-on Engineering Manager DevOps (GCP/Kubernetes)"),
                 ("Engineering Manager Platform And It Compliance", "Engineering Manager - Platform and IT & Compliance"),
-                ("Senior Engineering Manager, Platform", "Engineering Manager Platform (m/w/d)")]
+                ("Senior Engineering Manager, Platform", "Engineering Manager Platform (m/w/d)"),
+                ("Head of Platform (Infrastructure & DevOps)", "Head of Platform – Infrastructure, DevOps")]
         different = [("Engineering Manager Banking Platform", "Engineering Manager Ai Engineering Ai Platform"),
                      ("Engineering Manager Platform", "Engineering Manager Data"),
                      ("Head of Platform", "Head of Infrastructure"),
-                     ("Manager", "Manager")]          # too few words to judge
+                     ("Manager", "Manager"),          # too few words to judge
+                     ("Engineering Manager (Platform)", "Engineering Manager (Data)")]
         for a, b in same:
             self.assertTrue(similar_titles(a, b), (a, b))
         for a, b in different:

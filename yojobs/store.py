@@ -91,18 +91,29 @@ _BRACKETS = re.compile(r"\([^)]*\)|\[[^\]]*\]")
 _FILLER = {"remote", "of", "and", "the", "for", "with", "in", "at", "a", "an", "to"}
 
 
-def title_words(title: str) -> set:
-    return {w for w in norm_title(_BRACKETS.sub(" ", title or "")).split() if w not in _FILLER}
+def title_words(title: str, keep_brackets: bool = False) -> set:
+    text = (title or "") if keep_brackets else _BRACKETS.sub(" ", title or "")
+    text = _BRACKETS.sub(lambda m: " " + m.group(0)[1:-1] + " ", text)  # "(a & b)" -> " a & b "
+    return {w for w in norm_title(text).split() if w not in _FILLER}
+
+
+def _jaccard(wa: set, wb: set) -> float:
+    if len(wa) < 2 or len(wb) < 2:
+        return 0.0
+    return len(wa & wb) / len(wa | wb)
 
 
 def similar_titles(a: str, b: str) -> bool:
     """"Engineering Manager Platform" vs "Engineering Manager Data" (2 of 4 words) are
-    different jobs; "Hands-on EM Infrastructure" vs "Hands-on EM DevOps (GCP)" (4 of 6)
-    are the same."""
-    wa, wb = title_words(a), title_words(b)
-    if len(wa) < 2 or len(wb) < 2:
-        return False
-    return len(wa & wb) / len(wa | wb) >= SIMILAR_TITLES
+    different jobs; "Hands-on EM Infrastructure" vs "Hands-on EM DevOps (GCP)" (4 of 6
+    without the brackets) are the same; so are "Head of Platform (Infrastructure & DevOps)"
+    and "Head of Platform – Infrastructure, DevOps" (same words once the brackets are read).
+    When only one title has a bracketed part, compare both without and with it and take the
+    closer result; when both have one ("EM (Platform)" vs "EM (Data)"), the brackets count."""
+    with_brackets = _jaccard(title_words(a, True), title_words(b, True))
+    if _BRACKETS.search(a or "") and _BRACKETS.search(b or ""):
+        return with_brackets >= SIMILAR_TITLES
+    return max(with_brackets, _jaccard(title_words(a), title_words(b))) >= SIMILAR_TITLES
 
 
 def job_key(job: Job) -> str:
