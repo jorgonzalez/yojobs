@@ -23,7 +23,7 @@ from types import SimpleNamespace
 
 from ..models import Job, strip_html, to_utc
 from ..progress import is_verbose, note, say
-from ..remote import remote_evidence
+from ..remote import remote_evidence, remote_region
 
 
 def _published(value):
@@ -72,6 +72,27 @@ def gentle_session_factory(create_session, throttle: Throttle):
         session.hooks["response"].append(record)
         return session
     return make
+
+
+def parse_job_page(page: str):
+    """-> (description, location) from a public LinkedIn job page."""
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(page, "html.parser")
+    desc = soup.find("div", class_=lambda x: x and "show-more-less-html__markup" in x)
+    loc = soup.find(class_=lambda x: x and "topcard__flavor--bullet" in x)
+    return (strip_html(str(desc)) if desc else "", loc.get_text(" ", strip=True) if loc else "")
+
+
+def job_page(session, job_id: str):
+    """Fetch one public job page (the same single request jobdrop makes for the
+    description); -> (description, location), ("", "") on any failure."""
+    try:
+        r = session.get(f"https://www.linkedin.com/jobs/view/{job_id}", timeout=10)
+        if r.status_code != 200 or "linkedin.com/signup" in r.url:
+            return "", ""
+        return parse_job_page(r.text)
+    except Exception:
+        return "", ""
 
 
 def rotated(searches: list, now: float = None) -> list:
@@ -164,14 +185,23 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
             if n:
                 time.sleep(random.uniform(2, 5))
             say(f"    linkedin description {n + 1}/{len(candidates)}: {job.title[:60]}")
-            details = li._get_job_details(job._li_id) or {}
-            job.description = strip_html(details.get("description") or "")
+            job.description, page_location = job_page(li.session, job._li_id)
+            # Search cards sometimes have no location; an empty location would count as
+            # "no restriction" for a remote job, so take the job page's location instead.
+            if not job.location and page_location:
+                job.location = page_location
     # Decide remote for every job from the wording, not LinkedIn's filter.
     for job in jobs.values():
         where = remote_evidence(job.title, job.description)
         job.remote = bool(where)
         if where == "description":
             job.source_notes = ["remote per description, check"]
+        # Where the remote role may be done from, if the ad says it ("fully remote and
+        # global", "remote within the EU"): checked by remote_regions like a location.
+        region = remote_region(job.description) if job.remote else ""
+        if region:
+            job.location = f"{job.location} (remote: {region})" if job.location else f"Remote: {region}"
+            job.source_notes = job.source_notes + [f"remote region from the ad: {region}, check"]
     if candidates:
         missing = sum(1 for j in candidates if not j.description)
         if missing:

@@ -28,3 +28,27 @@ def remote_evidence(title: str, description: str) -> str:
     if _REMOTE_TEXT.search(description or ""):
         return "description"
     return ""
+
+
+# Regions an ad can name for where a remote role may be done from. Returned in the
+# words of the remote_regions setting, so the normal region rule can check them.
+_REGION_WORDS = {
+    "global": r"global(ly)?", "worldwide": r"world[\s-]?wide", "anywhere": r"anywhere",
+    "Europe": r"europe|european\s+union", "EU": r"eu", "EMEA": r"emea", "CET": r"cet|cest",
+    "Germany": r"germany|deutschland",
+}
+_REGION_RE = re.compile(r"\b(" + "|".join(f"(?P<{k}>{v})" for k, v in _REGION_WORDS.items()) + r")\b", re.I)
+_SENTENCE = re.compile(r"[^.!?\n]*\bremote\b[^.!?\n]*", re.I)
+
+
+def remote_region(description: str) -> str:
+    """Regions named in the same sentence as "remote" ("Fully remote and global",
+    "remote within the EU"), e.g. "global" or "Europe, EU"; "" if none.
+    "Fully remote role based in Barcelona, Spain" gives "" (no allowed region)."""
+    found = []
+    for sentence in _SENTENCE.findall(description or ""):
+        for m in _REGION_RE.finditer(sentence):
+            name = next(k for k, v in m.groupdict().items() if v)
+            if name not in found:
+                found.append(name)
+    return ", ".join(found)

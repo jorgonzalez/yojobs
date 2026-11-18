@@ -1,6 +1,6 @@
 import unittest
 
-from yojobs.remote import remote_evidence
+from yojobs.remote import remote_evidence, remote_region
 
 
 class RemoteEvidence(unittest.TestCase):
@@ -18,6 +18,17 @@ class RemoteEvidence(unittest.TestCase):
                   "2 Tage Homeoffice pro Woche", "mobiles Arbeiten möglich"]:
             self.assertEqual(remote_evidence("DevOps Manager", d), "", d)
 
+
+
+class RemoteRegion(unittest.TestCase):
+    def test_regions_named_with_remote(self):
+        self.assertEqual(remote_region("Fully remote and global, we are in the middle of it."), "global")
+        self.assertEqual(remote_region("This role is remote within the EU (CET +/- 2h)."), "EU, CET")
+
+    def test_no_allowed_region(self):
+        self.assertEqual(remote_region("Why Join? Fully remote role based in Barcelona, Spain"), "")
+        self.assertEqual(remote_region("Full remote flexibility, work from wherever you like."), "")
+        self.assertEqual(remote_region("Offices in Germany. The role is on-site in Munich."), "")  # no "remote"
 
 if __name__ == "__main__":
     unittest.main()

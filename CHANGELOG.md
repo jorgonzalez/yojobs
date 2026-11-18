@@ -4,6 +4,15 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.13.2 — #19 [fix][linkedin] Use the job page's location and the ad's remote region
+- Some LinkedIn search cards have no location; for a remote job an empty location
+  counted as "no restriction", so remote jobs in Cracow, Portugal and Barcelona were
+  emailed. The location now comes from the job page (fetched anyway for the
+  description) when the card has none.
+- The remote region named in the ad ("fully remote and global", "remote within the EU")
+  is added to the location for the remote_regions rule, with the note "remote region
+  from the ad, check": global/EU remote roles pass, "remote, based in Barcelona" doesn't.
+
 ## v0.13.1 — #18 [fix][linkedin] Stop on throttling instead of waiting minutes per search
 - jobdrop retried LinkedIn's 429 ("too many requests") 3 times honouring Retry-After:
   four searches in one run stalled ~15.5 minutes each (LinkedIn took 78 min).
