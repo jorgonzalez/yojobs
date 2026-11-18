@@ -107,5 +107,40 @@ class JobPage(unittest.TestCase):
                 raise TimeoutError()
         self.assertEqual(linkedin.job_page(Bad(), "1"), ("", ""))
 
+
+class Lean(unittest.TestCase):
+    def run_fetch(self, last_full_run, known_urls=()):
+        seen = {"hours_old": [], "pages": []}
+        rows = pd.DataFrame([{"job_url": f"https://www.linkedin.com/jobs/view/{i}", "title": "Engineering Manager Platform",
+                              "company": "Acme", "location": "Berlin", "date_posted": None, "id": f"li-{i}"} for i in (1, 2, 3)])
+
+        def fake_scrape(**kw):
+            seen["hours_old"].append(kw["hours_old"])
+            return rows
+
+        class FakeLinkedIn:
+            session = None
+            scraper_input = None
+        cfg = {"searches": [{"term": "EM Platform", "location": "Berlin"}],
+               "_title_ok": lambda j: True, "_last_full_run": last_full_run,
+               "_known": lambda j: j.url in known_urls}
+        since = datetime.now(timezone.utc) - timedelta(days=3)
+        with mock.patch.object(linkedin.time, "sleep"), mock.patch.object(linkedin, "say"), \
+                mock.patch.object(linkedin, "note"), \
+                mock.patch.object(linkedin, "job_page", lambda session, jid: seen["pages"].append(jid) or ("text", "")):
+            linkedin._fetch(cfg, since, fake_scrape, lambda level: None, FakeLinkedIn, mock.MagicMock(), linkedin.Throttle())
+        return seen
+
+    def test_lookback_since_last_full_run(self):
+        yesterday = datetime.now(timezone.utc) - timedelta(hours=24)
+        self.assertEqual(self.run_fetch(yesterday)["hours_old"], [27])       # 24 h + 2 h margin + 1
+        self.assertEqual(self.run_fetch(None)["hours_old"], [73])            # never ran: general 3 days
+        long_ago = datetime.now(timezone.utc) - timedelta(days=10)
+        self.assertEqual(self.run_fetch(long_ago)["hours_old"], [73])        # missed days: capped at 3 days
+
+    def test_known_jobs_are_not_reopened(self):
+        pages = self.run_fetch(None, known_urls={"https://www.linkedin.com/jobs/view/2"})["pages"]
+        self.assertEqual(pages, ["1", "3"])
+
 if __name__ == "__main__":
     unittest.main()

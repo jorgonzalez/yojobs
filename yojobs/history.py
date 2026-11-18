@@ -99,6 +99,19 @@ class History:
             return f"returned no jobs in the last {failed_runs} runs (the site may have changed)"
         return None
 
+    def last_full_run(self, source: str) -> Optional[datetime]:
+        """When the source last ran without being throttled (UTC), or None."""
+        throttled = {r for (r,) in self.db.execute(
+            "SELECT run_at FROM part_failures WHERE source = ? AND part = 'throttled'", (source,))}
+        for (r,) in self.db.execute("SELECT run_at FROM source_runs WHERE source = ? AND status = 'ok' "
+                                    "ORDER BY run_at DESC LIMIT 20", (source,)):
+            if r not in throttled:
+                return datetime.fromisoformat(r)
+        return None
+
+    def known_near_miss(self, url: str) -> bool:
+        return self.db.execute("SELECT 1 FROM near_misses WHERE url = ? LIMIT 1", (url,)).fetchone() is not None
+
     def full_runs_today(self, source: str, now: Optional[datetime] = None) -> int:
         """How many times the source ran today (local date) without being throttled
         (a run that recorded a "throttled" part doesn't count)."""
