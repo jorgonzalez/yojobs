@@ -81,6 +81,30 @@ def norm_title(title: str) -> str:
     return " ".join(words)
 
 
+# --- similar titles ------------------------------------------------------------
+# Portals retitle the same job ("Hands-on Engineering Manager, Infrastructure" vs
+# "Remote Hands-on Engineering Manager (DevOps, GCP, Kubernetes)"). Same company +
+# mostly the same title words (brackets ignored) counts as the same job.
+
+SIMILAR_TITLES = 0.65  # share of words in common (Jaccard) from which two titles are the same job
+_BRACKETS = re.compile(r"\([^)]*\)|\[[^\]]*\]")
+_FILLER = {"remote", "of", "and", "the", "for", "with", "in", "at", "a", "an", "to"}
+
+
+def title_words(title: str) -> set:
+    return {w for w in norm_title(_BRACKETS.sub(" ", title or "")).split() if w not in _FILLER}
+
+
+def similar_titles(a: str, b: str) -> bool:
+    """"Engineering Manager Platform" vs "Engineering Manager Data" (2 of 4 words) are
+    different jobs; "Hands-on EM Infrastructure" vs "Hands-on EM DevOps (GCP)" (4 of 6)
+    are the same."""
+    wa, wb = title_words(a), title_words(b)
+    if len(wa) < 2 or len(wb) < 2:
+        return False
+    return len(wa & wb) / len(wa | wb) >= SIMILAR_TITLES
+
+
 def job_key(job: Job) -> str:
     return f"{norm_company(job.company)}|{norm_title(job.title)}"
 
@@ -126,15 +150,28 @@ class Store:
             "SELECT 1 FROM seen WHERE url = ? OR (key = ? AND first_seen >= ?) LIMIT 1",
             (job.url, job_key(job), self._cutoff()),
         ).fetchone()
-        return row is not None
+        if row is not None:
+            return True
+        # the same job under another title on another portal (same company, similar title)
+        company = norm_company(job.company)
+        if not company:
+            return False
+        rows = self.db.execute(
+            "SELECT title FROM seen WHERE substr(key, 1, ?) = ? AND first_seen >= ?",
+            (len(company) + 1, company + "|", self._cutoff()),
+        ).fetchall()
+        return any(similar_titles(job.title, t or "") for (t,) in rows)
 
     def filter_new(self, jobs: List[Job]) -> List[Job]:
-        new, keys = [], set()
+        new, keys, taken = [], set(), []
         for j in jobs:
             k = job_key(j)
-            if k in keys or self.is_seen(j):
+            company = norm_company(j.company)
+            if k in keys or self.is_seen(j) or \
+                    any(c == company and company and similar_titles(j.title, t) for c, t in taken):
                 continue  # also dedupes within this run
             keys.add(k)
+            taken.append((company, j.title))
             new.append(j)
         return new
 

@@ -237,7 +237,8 @@ the Dock. Ollama's own log: `~/Library/Logs/ollama.log`.
 
 A job is never emailed twice: its URL is remembered forever, and its normalized
 company + title for `dedupe_days` (default 60), which catches reposts and the same
-job on another portal. Normalization drops legal suffixes (GmbH, Inc, B.V....),
+job on another portal. Retitled copies count too: same company and titles sharing
+more than 65% of their words (brackets ignored). Normalization drops legal suffixes (GmbH, Inc, B.V....),
 gender tags like (m/w/d), location tails like "- Remote, Germany", and expands
 Sr/Jr/Mgr.
 

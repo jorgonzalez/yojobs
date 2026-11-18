@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.13.3 — #20 [fix][dedupe] Treat the same job retitled on another portal as a duplicate
+- Duplicates were only caught by an identical normalized company + title, so the same
+  job was emailed twice when portals titled it differently (Miaplaza on Himalayas and
+  Arbeitnow; Trawa on Welcome to the Jungle and StartupMap).
+- Now also: same company and titles sharing more than 65% of their words (brackets such
+  as "(GCP/Kubernetes)" ignored), within dedupe_days, across runs and within a run.
+  "Engineering Manager Banking Platform" vs "… AI Platform" stay two jobs.
+
 ## v0.13.2 — #19 [fix][linkedin] Use the job page's location and the ad's remote region
 - Some LinkedIn search cards have no location; for a remote job an empty location
   counted as "no restriction", so remote jobs in Cracow, Portugal and Barcelona were

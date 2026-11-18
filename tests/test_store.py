@@ -96,5 +96,37 @@ class Dedupe(unittest.TestCase):
         self.assertEqual(reopened.filter_new([job("Sr. DevOps Engineer", url="https://b/2")]), [])
 
 
+
+class SimilarTitles(unittest.TestCase):
+    def test_pairs(self):
+        from yojobs.store import similar_titles
+        same = [("Hands-on Engineering Manager, Infrastructure", "Hands-on Engineering Manager DevOps (GCP/Kubernetes)"),
+                ("Engineering Manager Platform And It Compliance", "Engineering Manager - Platform and IT & Compliance"),
+                ("Senior Engineering Manager, Platform", "Engineering Manager Platform (m/w/d)")]
+        different = [("Engineering Manager Banking Platform", "Engineering Manager Ai Engineering Ai Platform"),
+                     ("Engineering Manager Platform", "Engineering Manager Data"),
+                     ("Head of Platform", "Head of Infrastructure"),
+                     ("Manager", "Manager")]          # too few words to judge
+        for a, b in same:
+            self.assertTrue(similar_titles(a, b), (a, b))
+        for a, b in different:
+            self.assertFalse(similar_titles(a, b), (a, b))
+
+    def test_seen_across_portals(self):
+        import tempfile
+        from pathlib import Path as P
+        with tempfile.TemporaryDirectory() as d:
+            store = Store(P(d) / "db.sqlite")
+            first = Job(source="himalayas", title="Hands-on Engineering Manager, Infrastructure", company="Miaplaza",
+                        url="https://himalayas.app/x")
+            again = Job(source="arbeitnow", title="Remote Hands-on Engineering Manager (DevOps, GCP, Kubernetes)",
+                        company="MiaPlaza Inc.", url="https://www.arbeitnow.com/y")
+            other = Job(source="arbeitnow", title="Engineering Manager Data", company="Miaplaza", url="https://z")
+            store.mark_seen([first])
+            self.assertEqual(store.filter_new([again, other]), [other])
+            # and within one run
+            store2 = Store(P(d) / "db2.sqlite")
+            self.assertEqual(store2.filter_new([first, again, other]), [first, other])
+
 if __name__ == "__main__":
     unittest.main()
