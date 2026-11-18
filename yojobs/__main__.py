@@ -158,8 +158,14 @@ def _near_miss_scorer(cfg: dict, store: Store):
 def send_weekly(args, cfg: dict, store: Store) -> int:
     history = History(store.db)
     weekly_cfg = cfg.get("weekly") or {}
+    found = []
+    limit = int(weekly_cfg.get("discover_boards", 15))
+    if limit > 0:  # job boards of companies from recent matches / near misses
+        from . import discovery
+        found = discovery.run(store.db, cfg, limit=limit)
     subject, text, html_body, urls = weekly.build(history, weekly_cfg, score=_near_miss_scorer(cfg, store),
-                                                  searches=weekly.search_labels(cfg.get("sources") or {}))
+                                                  searches=weekly.search_labels(cfg.get("sources") or {}),
+                                                  discoveries=found)
     if not args.email:
         print(subject + "\n\n" + text)
         return 0

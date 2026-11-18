@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.18.0 — #30 [feat][weekly] Suggest job boards of companies that hire for your profile
+- Weekly: companies from the last 30 days' matches and near misses that aren't in
+  companies.yaml are checked once (up to `weekly.discover_boards`, default 15 per week)
+  for a public board on Greenhouse, Ashby, Lever, Personio, Recruitee or Teamtailor,
+  trying a few spellings of the name. A board counts only if its reported name matches
+  (whole words, same first word), or, where the system reports none, the id is the full
+  name. Suggestions show the line for companies.yaml until it's added.
+
 ## v0.17.0 — #29 [feat][companies] Add Teamtailor career sites as a hiring system
 - `teamtailor:` in companies.yaml: a company's Teamtailor career site feed
   (`https://<id>.teamtailor.com/jobs.rss`, or the company's own career domain), which

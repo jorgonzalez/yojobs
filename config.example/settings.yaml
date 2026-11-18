@@ -47,6 +47,8 @@ weekly:
   day: monday
   near_misses: true
   near_misses_scored: 15     # CV-score up to this many near misses (if matching is on); best first
+  discover_boards: 15        # check up to N new companies (from matches/near misses) for a public job
+                             # board and suggest it for companies.yaml; 0 = off
 
 # A source (or one company board) that errors or returns 0 jobs for this many runs
 # in a row (usually the site changed) triggers one warning email.
