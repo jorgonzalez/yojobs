@@ -171,6 +171,8 @@ Real runs (`--email` and scheduled runs) keep a small history in `seen.sqlite`:
 - **Near misses** (in the weekly email): jobs that passed every rule except the
   required words (`ad_must_mention`), e.g. a platform leadership job whose ad never says
   Kubernetes. Each is listed once; jobs already emailed as matches are left out.
+  With CV matching on, up to `near_misses_scored` (15) of them get a CV match score
+  and are listed best first.
 - **Source health** (`health:`): a source that errors or returns 0 jobs for
   `failed_runs` runs in a row (usually because the site changed) triggers one
   warning email, sent even when there are no new jobs. Runs where every source

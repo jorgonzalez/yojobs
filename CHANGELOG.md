@@ -4,6 +4,13 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.14.0 — #24 [feat][weekly] CV-score the weekly near misses and list the best first
+- Near misses now keep their ad text (new `description` column; added automatically
+  to existing databases; older near misses stay unscored).
+- With CV matching on, the weekly email scores up to `weekly.near_misses_scored` (15)
+  pending near misses with your CV and criteria, lists them best first and shows the
+  "CV match NN% · role: …" line. Scores are cached, so previews don't redo them.
+
 ## v0.13.6 — #23 [chore][ci] Run the tests on GitHub for every pull request
 - GitHub Actions workflow (`.github/workflows/tests.yml`): installs the requirements on
   Ubuntu with Python 3.12 and runs the unit tests on every pull request and push to

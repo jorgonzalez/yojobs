@@ -21,6 +21,7 @@ from .progress import note, say, step
 from .schedule import RunLock, State, is_due, trim_log
 from .sources import SOURCES
 from .config import default_path, load_config
+from .models import Job
 from .store import Store, norm_company
 
 ROOT = Path(__file__).resolve().parent.parent  # repo dir; launchd runs from elsewhere
@@ -139,10 +140,25 @@ def scheduled(args, cfg: dict, store: Store) -> int:
         lock.release()
 
 
+def _near_miss_scorer(cfg: dict, store: Store):
+    """CV-score the weekly near misses (if matching is on): best first in the email.
+    Up to weekly.near_misses_scored (15); cached like the alert emails' scores."""
+    def score(near):
+        limit = int((cfg.get("weekly") or {}).get("near_misses_scored", 15))
+        jobs = [Job(source=n["source"], title=n["title"], company=n["company"], url=n["url"],
+                    location=n["location"], description=n.get("description") or "") for n in near]
+        mcfg = dict(cfg, matching=dict(cfg.get("matching") or {}, max_jobs_per_run=limit))
+        matching.score_jobs(jobs, mcfg, ROOT, store.db)
+        for n, j in zip(near, jobs):
+            if j.match:
+                n["match"] = j.match
+    return score
+
+
 def send_weekly(args, cfg: dict, store: Store) -> int:
     history = History(store.db)
     weekly_cfg = cfg.get("weekly") or {}
-    subject, text, html_body, urls = weekly.build(history, weekly_cfg)
+    subject, text, html_body, urls = weekly.build(history, weekly_cfg, score=_near_miss_scorer(cfg, store))
     if not args.email:
         print(subject + "\n\n" + text)
         return 0
