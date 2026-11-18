@@ -31,13 +31,15 @@ def search_labels(sources_cfg: dict) -> dict:
     """{source: ["term · place", ...]} for the enabled search-based sources, in the
     same wording the sources record as found_by."""
     out = {}
-    for source in ("linkedin", "indeed", "stepstone"):
+    for source in ("linkedin", "indeed", "stepstone", "remotecom"):
         scfg = sources_cfg.get(source) or {}
         if not scfg.get("enabled", True) or not scfg.get("searches"):
             continue
         labels = []
         for s in scfg["searches"]:
-            if source == "stepstone":
+            if source == "remotecom":
+                label = f"{s['term']} · remote.com"
+            elif source == "stepstone":
                 if s.get("remote") or not s.get("location"):
                     continue
                 label = f"{s['term']} · {s['location']}"

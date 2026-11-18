@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.19.0 — #31 [feat][sources] Add the Remote.com job board
+- New source `remotecom`: one search page per term of the `only: [remotecom]` group in
+  searches.yaml (`/jobs/all?query=…`, allowed by robots.txt); job data from the page:
+  title, company, where they hire (worldwide or regions/countries), work mode, date,
+  salary. Job pages (schema.org JobPosting, full ad) only for jobs that pass the title
+  and place rules and aren't known yet. Counts in the weekly "Searches" table.
+- The example's main search group is now limited to LinkedIn, Indeed and StepStone.
+
 ## v0.18.0 — #30 [feat][weekly] Suggest job boards of companies that hire for your profile
 - Weekly: companies from the last 30 days' matches and near misses that aren't in
   companies.yaml are checked once (up to `weekly.discover_boards`, default 15 per week)
