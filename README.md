@@ -274,6 +274,7 @@ Sr/Jr/Mgr.
 | berlinstartupjobs | RSS | teaser only; full page fetched for title matches |
 | welcometothejungle | sitemaps | job pages are bot-protected, so sitemap URLs only: Berlin jobs, no descriptions |
 | companies | Greenhouse / Lever / Ashby / Personio / Recruitee / Teamtailor | company career pages, listed in `config/companies.yaml`; ~2 min for 137 companies |
+| remotecom | search pages | remote.com/jobs: `only: [remotecom]` terms; where they hire, work mode, salary; full ad for candidates |
 | stepstone | search pages | `searches.yaml` terms in cities (no remote searches); excerpt + skills only, job pages not opened; ~1 min |
 | linkedin | jobdrop | searches in config; descriptions fetched only for title/location matches; ~10 min |
 | indeed | jobdrop | one Indeed country per config; descriptions included; fast |

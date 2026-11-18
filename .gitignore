@@ -3,6 +3,7 @@
 *.sqlite
 .DS_Store
 .env
+.tmp/
 .venv/
 __pycache__/
 config.yaml

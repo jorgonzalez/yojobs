@@ -12,8 +12,13 @@ searches:
     places:
       - {location: Berlin}                    # any work mode
       - {location: Germany, remote: true}
+    only: [linkedin, indeed, stepstone]
   - terms: [DevOps Manager, Site Reliability Engineering Manager, Platform Engineering Manager,
             Infrastructure Engineering Manager]
     places:
       - {location: European Union, remote: true}
     only: [linkedin]
+  # Remote.com: places don't matter (remote board); its search matches single words, so a few
+  # broad terms are enough and the profile filters do the rest
+  - terms: [Engineering Manager, DevOps Manager, Head of Platform, SRE Manager]
+    only: [remotecom]

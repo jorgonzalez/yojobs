@@ -27,7 +27,7 @@ from typing import Dict, List
 import yaml
 
 SYSTEMS = ("greenhouse", "lever", "ashby", "personio", "recruitee", "teamtailor")
-SEARCH_SOURCES = ("linkedin", "indeed", "stepstone")
+SEARCH_SOURCES = ("linkedin", "indeed", "stepstone", "remotecom")
 
 
 class ConfigError(Exception):
