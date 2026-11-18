@@ -89,5 +89,6 @@ def fetch(cfg, since):
                 description=desc,
                 remote=bool(where_remote),
                 source_notes=["remote per description, check"] if where_remote == "description" else [],
+                found_by=f"{s['term']} · {where}",
             )
     return list(jobs.values())

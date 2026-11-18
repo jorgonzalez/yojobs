@@ -165,6 +165,32 @@ class NearMissScores(Base):
                 text = weekly.build(self.h, {}, score=scorer)[1]
         self.assertIn("CV match 88% · role: strong · skills: good", text)
 
+
+class SearchStats(Base):
+    def test_matches_and_near_misses_per_search(self):
+        m1 = job("Head of Platform", url="https://m1"); m1.source, m1.found_by = "linkedin", "SRE Manager · Berlin"
+        m2 = job("EM Cloud", url="https://m2"); m2.source, m2.found_by = "linkedin", "SRE Manager · Berlin"
+        n1 = job("EM Platform", url="https://n1"); n1.source, n1.found_by = "linkedin", "DevOps Manager · Germany (remote)"
+        self.store.mark_seen([m1, m2])
+        self.h.add_near_misses([(n1, "no Kubernetes in the ad")])
+        labels = {"linkedin": ["SRE Manager · Berlin", "DevOps Manager · Germany (remote)", "Head of SRE · Berlin"]}
+        stats = {(r["search"]): (r["matches"], r["near"]) for r in self.h.search_stats(labels)}
+        self.assertEqual(stats, {"SRE Manager · Berlin": (2, 0), "DevOps Manager · Germany (remote)": (0, 1),
+                                 "Head of SRE · Berlin": (0, 0)})
+        text = weekly.build(self.h, {}, searches=labels)[1]
+        self.assertIn("Searches, last 7 days", text)
+        self.assertIn("  0 / 0   Head of SRE · Berlin", text)
+
+    def test_search_labels_follow_the_config(self):
+        labels = weekly.search_labels({
+            "linkedin": {"searches": [{"term": "SRE Manager", "location": "Berlin"},
+                                      {"term": "SRE Manager", "location": "Germany", "remote": True}]},
+            "stepstone": {"searches": [{"term": "SRE Manager", "location": "Berlin"},
+                                       {"term": "SRE Manager", "location": "Germany", "remote": True}]},
+            "indeed": {"enabled": False, "searches": [{"term": "x", "location": "Berlin"}]}})
+        self.assertEqual(labels, {"linkedin": ["SRE Manager · Berlin", "SRE Manager · Germany (remote)"],
+                                  "stepstone": ["SRE Manager · Berlin"]})
+
 class NearMiss(unittest.TestCase):
     def test_only_missing_required_words(self):
         self.assertEqual(jf.near_miss(job("Head of Platform", "We run AWS."), PROFILE), "no Kubernetes in the ad")

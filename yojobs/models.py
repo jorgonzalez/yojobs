@@ -26,6 +26,7 @@ class Job:
     work_mode: str = ""  # as stated by the source: "remote", "hybrid", "onsite" (or "")
     work_hint: str = ""  # shown next to the location, e.g. "hybrid · 2 office days/week"
     match: Optional[dict] = None  # optional CV match: {score, strengths, gaps, summary}
+    found_by: str = ""  # which search found it, e.g. "SRE Manager · Berlin" (search-based sources)
 
 
     # Filled in by the filter step

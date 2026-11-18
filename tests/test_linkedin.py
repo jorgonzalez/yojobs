@@ -142,5 +142,14 @@ class Lean(unittest.TestCase):
         pages = self.run_fetch(None, known_urls={"https://www.linkedin.com/jobs/view/2"})["pages"]
         self.assertEqual(pages, ["1", "3"])
 
+    def test_found_by_records_the_search(self):
+        rows = pd.DataFrame([{"job_url": "https://www.linkedin.com/jobs/view/9", "title": "EM Platform", "company": "A",
+                              "location": "Berlin", "date_posted": None, "id": "li-9"}])
+        cfg = {"searches": [{"term": "EM Platform", "location": "Germany", "remote": True}], "_title_ok": lambda j: False}
+        with mock.patch.object(linkedin.time, "sleep"), mock.patch.object(linkedin, "say"), mock.patch.object(linkedin, "note"):
+            jobs = linkedin._fetch(cfg, datetime.now(timezone.utc) - timedelta(days=1), lambda **kw: rows,
+                                   lambda level: None, None, None, linkedin.Throttle())
+        self.assertEqual(jobs[0].found_by, "EM Platform · Germany (remote)")
+
 if __name__ == "__main__":
     unittest.main()

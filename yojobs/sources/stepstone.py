@@ -111,6 +111,7 @@ def fetch(cfg, since):
             ok += 1
             for o in records(page):
                 job = to_job(o)
+                job.found_by = f"{term} · {city}"
                 jobs.setdefault(job.url, job)
     if n and not ok:
         raise RuntimeError(f"all {n} StepStone searches failed")
