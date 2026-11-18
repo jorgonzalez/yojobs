@@ -4,6 +4,11 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.14.1 — #25 [chore][scripts] Add status.sh to see whether a run is in progress
+- `./scripts/status.sh`: whether a run is in progress (automatic or manual, how long,
+  latest log lines), today's automatic runs, when the next is due, and the launchd
+  agent's state and interval.
+
 ## v0.14.0 — #24 [feat][weekly] CV-score the weekly near misses and list the best first
 - Near misses now keep their ad text (new `description` column; added automatically
   to existing databases; older near misses stay unscored).
