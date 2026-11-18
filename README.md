@@ -270,7 +270,7 @@ Sr/Jr/Mgr.
 | arbeitnow | JSON API | jobs in Germany (many Berlin, ~1/3 in German); 300 per page, ~20 s for 30 days |
 | berlinstartupjobs | RSS | teaser only; full page fetched for title matches |
 | welcometothejungle | sitemaps | job pages are bot-protected, so sitemap URLs only: Berlin jobs, no descriptions |
-| companies | Greenhouse / Lever / Ashby / Personio / Recruitee | company career pages, listed in `config/companies.yaml`; ~2 min for 137 companies |
+| companies | Greenhouse / Lever / Ashby / Personio / Recruitee / Teamtailor | company career pages, listed in `config/companies.yaml`; ~2 min for 137 companies |
 | stepstone | search pages | `searches.yaml` terms in cities (no remote searches); excerpt + skills only, job pages not opened; ~1 min |
 | linkedin | jobdrop | searches in config; descriptions fetched only for title/location matches; ~10 min |
 | indeed | jobdrop | one Indeed country per config; descriptions included; fast |
@@ -297,6 +297,7 @@ Find its jobs page, take the id from the address, and add it to the right list i
 | `jobs.ashbyhq.com/<id>` | `ashby` |
 | `<id>.jobs.personio.de` | `personio` (for `.jobs.personio.com` write `<id>.com`) |
 | `<id>.recruitee.com` | `recruitee` |
+| `<id>.teamtailor.com` (or a company's own career site "powered by Teamtailor") | `teamtailor` (id, or the career domain) |
 
 SmartRecruiters and Workable aren't supported: SmartRecruiters' API robots.txt only
 allows LinkedIn's bot, and Workable rate-limits after a handful of requests.
