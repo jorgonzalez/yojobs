@@ -108,6 +108,7 @@ Safety:
 
 | What you want to know | Command |
 |---|---|
+| Everything at once: run in progress, today's runs, next run, agent | `./scripts/status.sh` |
 | Follow the log | `tail -f ~/Library/Logs/yojobs.log` |
 | Is the launchd job loaded, did it exit cleanly? | `launchctl print gui/$(id -u)/local.yojobs \| grep -E "state\|runs\|last exit"` |
 | Is a run going right now? | `pgrep -fl yojobs` |
