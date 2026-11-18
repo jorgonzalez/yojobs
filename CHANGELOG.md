@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.13.1 — #18 [fix][linkedin] Stop on throttling instead of waiting minutes per search
+- jobdrop retried LinkedIn's 429 ("too many requests") 3 times honouring Retry-After:
+  four searches in one run stalled ~15.5 minutes each (LinkedIn took 78 min).
+- LinkedIn requests now never retry 429s or wait for Retry-After (5xx: 2 short retries).
+- A 429 stops the run's remaining LinkedIn searches/descriptions, reported to the
+  health checks ("throttled"); the search order rotates each run, so the next run
+  starts with the skipped ones.
+
 ## v0.13.0 — #17 [feat][matching] Add --criteria for one run; allow all five criteria
 - `--criteria role,skills,gaps,wishes` overrides `criteria:` from matching.yaml for one
   run (with `--match` or a normal run).
