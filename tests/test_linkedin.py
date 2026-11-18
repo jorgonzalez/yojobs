@@ -88,5 +88,24 @@ class StopsWhenThrottled(unittest.TestCase):
         self.assertIn("skipped the other 3", cfg["_problems"][0][1])
 
 
+
+PAGE = """<html><body><h1 class="top-card-layout__title topcard__title">Engineering Manager - Infrastructure</h1>
+<span class="topcard__flavor topcard__flavor--bullet">Cracow Metropolitan Area</span>
+<div class="description__text"><div class="show-more-less-html__markup"><p>Fully remote and global, we are
+growing. You will guide a remote team of four infrastructure engineers running Kubernetes.</p></div></div></body></html>"""
+
+
+class JobPage(unittest.TestCase):
+    def test_description_and_location(self):
+        desc, loc = linkedin.parse_job_page(PAGE)
+        self.assertEqual(loc, "Cracow Metropolitan Area")
+        self.assertIn("Fully remote and global", desc)
+
+    def test_failures_give_empty(self):
+        class Bad:
+            def get(self, *a, **k):
+                raise TimeoutError()
+        self.assertEqual(linkedin.job_page(Bad(), "1"), ("", ""))
+
 if __name__ == "__main__":
     unittest.main()
