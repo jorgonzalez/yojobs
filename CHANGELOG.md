@@ -4,6 +4,12 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.17.0 — #29 [feat][companies] Add Teamtailor career sites as a hiring system
+- `teamtailor:` in companies.yaml: a company's Teamtailor career site feed
+  (`https://<id>.teamtailor.com/jobs.rss`, or the company's own career domain), which
+  robots.txt allows. Title, full ad text, date, locations (city, country), department,
+  and the work mode from `remoteStatus` (fully/remote, hybrid, none).
+
 ## v0.16.0 — #28 [feat][weekly] Show matches and near misses per search in the weekly email
 - LinkedIn, Indeed and StepStone jobs remember which search found them ("SRE Manager ·
   Berlin"); stored with emailed jobs and near misses (new `found_by` columns, added

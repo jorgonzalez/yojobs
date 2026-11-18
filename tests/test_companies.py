@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from yojobs.sources import companies
@@ -55,6 +56,34 @@ class Recruitee(unittest.TestCase):
         self.assertEqual(remote.location, "Homeoffice, Deutschland")
         self.assertEqual(hybrid.published.isoformat(), "2026-11-10T09:00:00+00:00")
 
+
+
+class Teamtailor(unittest.TestCase):
+    FEED = (Path(__file__).parent / "fixture_teamtailor.xml").read_bytes()
+
+    def test_feed(self):
+        urls = []
+        with mock.patch.object(companies, "get_bytes", lambda url, params=None: urls.append(url) or self.FEED):
+            jobs = companies._teamtailor("career")
+            companies._teamtailor("careers.example.com")
+        self.assertEqual(urls, ["https://career.teamtailor.com/jobs.rss", "https://careers.example.com/jobs.rss"])
+        first = jobs[0]
+        self.assertEqual((first.company, first.location), ("Teamtailor", "Chicago, United States"))
+        self.assertEqual((first.remote, first.work_mode), (False, "hybrid"))
+        self.assertEqual(first.published.isoformat(), "2026-11-11T16:34:36+00:00")
+        self.assertTrue(first.description)
+        self.assertEqual(jobs[2].work_mode, "onsite")
+
+    def test_fully_remote(self):
+        feed = self.FEED.replace(b"<remoteStatus>hybrid</remoteStatus>", b"<remoteStatus>fully</remoteStatus>", 1)
+        with mock.patch.object(companies, "get_bytes", lambda url, params=None: feed):
+            first = companies._teamtailor("career")[0]
+        self.assertEqual((first.remote, first.work_mode), (True, "remote"))
+
+    def test_config_accepts_teamtailor(self):
+        from yojobs.config import normalize
+        cfg = normalize({"sources": {"companies": True}, "companies": {"teamtailor": ["acme", "careers.example.com"]}})
+        self.assertEqual(cfg["sources"]["companies"]["boards"], ["teamtailor:acme", "teamtailor:careers.example.com"])
 
 if __name__ == "__main__":
     unittest.main()

@@ -6,6 +6,7 @@ applicant-tracking systems most tech companies use:
   ashby       https://api.ashbyhq.com/posting-api/job-board/<id>
   personio    https://<id>.jobs.personio.de/xml   (many German companies)
   recruitee   https://<id>.recruitee.com/api/offers/
+  teamtailor  https://<id>.teamtailor.com/jobs.rss   (or a company's own career domain)
 
 Not supported: SmartRecruiters (its API's robots.txt only allows LinkedIn's bot)
 and Workable (rate-limits even a handful of requests).
@@ -23,12 +24,14 @@ which we use as the remote flag. Personio only has the office text
 """
 from __future__ import annotations
 
+import re
 import time
 import xml.etree.ElementTree as ET
 
 from ..http import get_bytes, get_json
 from ..models import Job, from_timestamp, parse_iso, strip_html
 from ..progress import say
+from .rss import parse_rfc822
 
 GH_LIST = "https://boards-api.greenhouse.io/v1/boards/{}/jobs"
 GH_JOB = "https://boards-api.greenhouse.io/v1/boards/{}/jobs/{}"
@@ -144,6 +147,40 @@ def _personio(board):
     return jobs
 
 
+_TT = "{https://teamtailor.com/locations}"
+_TT_MODES = {"fully": (True, "remote"), "remote": (True, "remote"), "hybrid": (False, "hybrid"),
+             "none": (False, "onsite"), "onsite": (False, "onsite")}
+
+
+def _teamtailor(board):
+    """Teamtailor career site feed. A board is "acme" (acme.teamtailor.com) or a
+    company's own career domain ("careers.acme.com"), which serves the same feed."""
+    host = board if "." in board else f"{board}.teamtailor.com"
+    root = ET.fromstring(get_bytes(f"https://{host}/jobs.rss"))
+    channel = root.find("channel")
+    company = (channel.findtext("title") if channel is not None else "") or board
+    company = re.sub(r"(?i)\s*[-–|]?\s*(career|careers|jobs|karriere)\b.*$", "", company).strip() or board
+    jobs = []
+    for item in root.iter("item"):
+        places = []
+        for loc in item.iter(_TT + "location"):
+            places += [loc.findtext(_TT + "city") or loc.findtext(_TT + "name") or "", loc.findtext(_TT + "country") or ""]
+        remote, mode = _TT_MODES.get((item.findtext("remoteStatus") or "").strip().lower(), (None, ""))
+        jobs.append(Job(
+            source="companies",
+            title=(item.findtext("title") or "").strip(),
+            company=company,
+            url=(item.findtext("link") or "").strip(),
+            location=", ".join(dict.fromkeys(p for p in places if p)) or ("Remote" if remote else ""),
+            published=parse_rfc822(item.findtext("pubDate")),
+            description=strip_html(item.findtext("description") or ""),
+            tags=[t for t in (item.findtext(_TT + "department"), item.findtext(_TT + "role")) if t],
+            remote=remote,
+            work_mode=mode,
+        ))
+    return jobs
+
+
 def _recruitee(board):
     jobs = []
     for o in get_json(f"https://{board}.recruitee.com/api/offers/").get("offers", []):
@@ -191,6 +228,8 @@ def fetch(cfg, since):
                 found = _personio(board)
             elif ats == "recruitee":
                 found = _recruitee(board)
+            elif ats == "teamtailor":
+                found = _teamtailor(board)
             else:
                 say(f"    companies: unknown system '{ats}' for {board}")
                 continue
