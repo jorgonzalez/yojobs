@@ -63,7 +63,13 @@ def main(argv=None) -> int:
         cfg["matching"] = dict(cfg.get("matching") or {},
                                criteria=[c.strip() for c in args.criteria.split(",") if c.strip()])
     if args.cv_check:
-        return matching.check(cfg, ROOT)
+        code = matching.check(cfg, ROOT)
+        # on its own it only shows the setup; with run options it shows it, then runs
+        wants_run = any([args.email, args.days is not None, args.source, args.all, args.match,
+                         args.weekly, args.scheduled, args.verbose])
+        if not wants_run:
+            return code
+        print()
     if args.match:
         return matching.match_one(cfg, ROOT, args.match)
     if args.scheduled or args.check_schedule:
