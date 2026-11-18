@@ -298,6 +298,9 @@ in `yojobs/sources/__init__.py`, and add `<name>: on` to `config/sources.yaml`.
 
 ## Tests
 
+The same tests run on GitHub (Actions) for every pull request and push to `main`;
+the result shows as a check on the pull request.
+
 ```sh
 .venv/bin/python -m unittest discover tests
 ```
