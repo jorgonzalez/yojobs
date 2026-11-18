@@ -94,7 +94,7 @@ def render(jobs: List[Job], stats: Sequence[Tuple[str, str, str]],
             + '</div>' + (_match_html(j.match) if j.match else "") + '</td></tr>'
         )
 
-    problems = [(n, m) for n, s, m in stats if s != "ok"]
+    problems = [(n, m) for n, s, m in stats if s == "ERROR"]  # planned skips (runs_per_day) are not problems
     if problems:
         lines.append("Source problems:")
         lines += [f"  {n}: {m}" for n, m in problems]

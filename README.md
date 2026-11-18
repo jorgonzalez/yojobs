@@ -272,6 +272,10 @@ Sr/Jr/Mgr.
 | linkedin | jobdrop | searches in config; descriptions fetched only for title/location matches; ~10 min |
 | indeed | jobdrop | one Indeed country per config; descriptions included; fast |
 
+Any source can be limited to its first N runs a day with `runs_per_day` in
+`config/sources.yaml` (the example sets LinkedIn to 1, since it throttles heavy use); a
+throttled run doesn't count, and `--source <name>` always runs it.
+
 LinkedIn and Indeed remote flags are unreliable, so outside your on-site cities a job
 from them only counts as remote if its location/title/description clearly says so
 (`yojobs/remote.py`); jobs remote only per description are marked "check".

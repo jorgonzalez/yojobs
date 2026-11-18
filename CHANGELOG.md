@@ -4,6 +4,13 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.15.0 — #26 [feat][sources] Limit a source to N runs a day (LinkedIn once a day)
+- New per-source setting `runs_per_day`: after that many runs today the source is
+  skipped (shown as "skip", not as a problem). A run in which the source was throttled
+  doesn't count, so a later run retries. `--source <name>` always runs it.
+- The example config sets `linkedin: runs_per_day: 1`: LinkedIn throttled 28 searches x
+  3 runs a day (429 from the first search all afternoon on 2026-11-18).
+
 ## v0.14.1 — #25 [chore][scripts] Add status.sh to see whether a run is in progress
 - `./scripts/status.sh`: whether a run is in progress (automatic or manual, how long,
   latest log lines), today's automatic runs, when the next is due, and the launchd

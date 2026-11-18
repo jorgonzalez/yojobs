@@ -205,10 +205,18 @@ def run(args, cfg: dict, store: Store, days: float):
     # companies you never want to hear from (applied already, not interested...)
     blocked = {_company_key(c) for c in cfg.get("blocked_companies") or [] if str(c).strip()}
     say(f"Checking {len(selected)} sources for jobs from the last {days:.3g} days")
+    history_now = History(store.db)
     for i, (name, scfg) in enumerate(selected.items(), 1):
         t0 = time.time()
         scfg["_problems"] = []  # parts of a source that failed (e.g. one company board)
         step(f"[{i}/{len(selected)}] {name}")
+        # runs_per_day (e.g. LinkedIn once a day): skip the source after its daily runs,
+        # unless asked for explicitly with --source
+        limit = scfg.get("runs_per_day")
+        if limit and not args.source and history_now.full_runs_today(name) >= int(limit):
+            stats.append((name, "skip", f"already ran {limit}x today (runs_per_day)"))
+            say(f"[{i}/{len(selected)}] {name}: skipped, already ran {limit}x today (runs_per_day: {limit})")
+            continue
         try:
             jobs = SOURCES[name](scfg, since)
         except Exception as exc:  # one broken portal must not stop the run
