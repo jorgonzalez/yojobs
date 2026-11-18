@@ -174,6 +174,9 @@ Real runs (`--email` and scheduled runs) keep a small history in `seen.sqlite`:
   Kubernetes. Each is listed once; jobs already emailed as matches are left out.
   With CV matching on, up to `near_misses_scored` (15) of them get a CV match score
   and are listed best first.
+- **Board discovery** (in the weekly email): companies from your recent matches and near
+  misses are checked once for a public job board on the six hiring systems; found boards
+  are suggested with the line to add to `config/companies.yaml` (`discover_boards`, 0 = off).
 - **Searches** (in the weekly email): matches and near misses per LinkedIn / Indeed /
   StepStone search over the last 7 days, including searches that found nothing, to see
   which searches earn their place.

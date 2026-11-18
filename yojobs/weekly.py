@@ -50,7 +50,7 @@ def search_labels(sources_cfg: dict) -> dict:
     return out
 
 
-def build(history: History, cfg: dict, score=None, searches=None) -> Tuple[str, str, str, List[str]]:
+def build(history: History, cfg: dict, score=None, searches=None, discoveries=None) -> Tuple[str, str, str, List[str]]:
     """-> (subject, text, html, near-miss urls listed). `score(near)` may add a CV match
     ("match") to near misses; scored ones are then listed best first."""
     st = history.week_stats()
@@ -84,6 +84,13 @@ def build(history: History, cfg: dict, score=None, searches=None) -> Tuple[str, 
     if parts:
         t += [f"Company boards that failed this week ({len(parts)}): check the jobs page, update or remove the entry:"]
         t += [f"  {p['part']:32} failed {p['failed']} of {p['runs']} runs  ({p['last_error'][:70]})" for p in parts]
+        t.append("")
+    found = discoveries or []
+    if found:
+        t += [f"Companies hiring for your profile with a public job board ({len(found)}). To watch them, add the",
+              "board to config/companies.yaml (system: [id, ...]):"]
+        t += [f"  {d['board'].split(':')[0]}: {d['board'].split(':', 1)[1]:28}  {d['company']} (e.g. {d['example'][:50]})"
+              for d in found]
         t.append("")
     stats = history.search_stats(searches) if searches else []
     if stats:
@@ -128,6 +135,12 @@ def build(history: History, cfg: dict, score=None, searches=None) -> Tuple[str, 
            + "".join(f'<li><b>{e(p["part"])}</b>: failed {p["failed"]} of {p["runs"]} runs '
                      f'<span style="color:#888">({e(p["last_error"][:90])})</span></li>' for p in parts)
            + "</ul>" if parts else "")
+        + (f'<h3 style="font-size:15px;margin:18px 0 4px">Companies with a public job board ({len(found)})</h3>'
+           f'<p style="font-size:12px;color:#666;margin:0 0 6px">They hire for your profile (from your matches and '
+           f'near misses). To watch them, add the board to config/companies.yaml.</p><ul style="font-size:12px;padding-left:18px">'
+           + "".join(f'<li><code>{e(d["board"].split(":")[0])}: {e(d["board"].split(":", 1)[1])}</code> — {e(d["company"])} '
+                     f'<span style="color:#888">(e.g. {e(d["example"][:60])})</span></li>' for d in found)
+           + "</ul>" if found else "")
         + (f'<h3 style="font-size:15px;margin:18px 0 4px">Searches, last 7 days</h3>'
            f'<p style="font-size:12px;color:#666;margin:0 0 6px">Matches emailed / near misses per search; '
            f'0 / 0 are candidates to drop.</p><table style="border-collapse:collapse">'
