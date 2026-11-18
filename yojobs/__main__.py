@@ -103,7 +103,9 @@ def scheduled(args, cfg: dict, store: Store) -> int:
     now = datetime.now()
     due, reason = is_due(cfg.get("schedule") or {}, state, now)
     if args.check_schedule or not due:
-        note(f"Scheduled run {'due' if due else 'not due'}: {reason}")
+        # checks run every 10 minutes: log "not due" at most once an hour
+        if args.check_schedule or state.log_once_per_hour(now):
+            note(f"Scheduled run {'due' if due else 'not due'}: {reason}")
         return 0
 
     lock = RunLock(ROOT / "yojobs.lock")

@@ -60,6 +60,14 @@ class Schedule(unittest.TestCase):
         self.assertEqual(again.last_run, at(17, "07:00"))
 
 
+    def test_not_due_logged_once_per_hour(self):
+        self.assertTrue(self.state.log_once_per_hour(at(17, "09:05")))
+        self.assertFalse(self.state.log_once_per_hour(at(17, "09:15")))
+        self.assertFalse(State(self.state.path).log_once_per_hour(at(17, "09:55")))  # survives reload
+        self.assertTrue(self.state.log_once_per_hour(at(17, "10:05")))
+        self.state.record_run(at(17, "10:10"))                                       # runs still recorded
+        self.assertEqual(State(self.state.path).last_run, at(17, "10:10"))
+
 class Lock(unittest.TestCase):
     def test_second_run_is_refused(self):
         with tempfile.TemporaryDirectory() as d:

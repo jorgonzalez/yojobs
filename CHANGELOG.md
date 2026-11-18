@@ -4,6 +4,13 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.13.5 — #22 [fix][schedule] Check every 10 minutes so runs start soon after the Mac wakes
+- launchd's interval timer doesn't fire while the Mac sleeps, so with 30-minute checks
+  a due run could wait up to 30 minutes after waking (13:15 check slept through,
+  run only at 13:28 by hand). The agent now checks every 10 minutes; reinstall it with
+  `./scripts/install-launchd.sh` to apply.
+- "Scheduled run not due" is logged at most once an hour, so the log doesn't grow.
+
 ## v0.13.4 — #21 [fix][cli] Let --cv-check continue with the run it's combined with
 - `--cv-check` on its own still only shows the CV match setup. Combined with run
   options (`--days`, `--email`, `--source`, `--match`, `-v`…) it now shows the setup

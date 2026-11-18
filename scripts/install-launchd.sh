@@ -1,5 +1,5 @@
 #!/bin/sh
-# Install (or reinstall) the yojobs launchd agent: checks every 30 minutes and once
+# Install (or reinstall) the yojobs launchd agent: checks every 10 minutes and once
 # at login/wake; yojobs itself decides whether a run is due (see `schedule:` in config.yaml).
 set -eu
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -21,7 +21,7 @@ cat > "$PLIST" <<PLIST
     <string>--scheduled</string>
   </array>
   <key>WorkingDirectory</key><string>$REPO</string>
-  <key>StartInterval</key><integer>1800</integer>
+  <key>StartInterval</key><integer>600</integer>
   <key>RunAtLoad</key><true/>
   <key>Nice</key><integer>5</integer>
   <key>EnvironmentVariables</key>
