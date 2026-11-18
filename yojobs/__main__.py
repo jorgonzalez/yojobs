@@ -158,7 +158,8 @@ def _near_miss_scorer(cfg: dict, store: Store):
 def send_weekly(args, cfg: dict, store: Store) -> int:
     history = History(store.db)
     weekly_cfg = cfg.get("weekly") or {}
-    subject, text, html_body, urls = weekly.build(history, weekly_cfg, score=_near_miss_scorer(cfg, store))
+    subject, text, html_body, urls = weekly.build(history, weekly_cfg, score=_near_miss_scorer(cfg, store),
+                                                  searches=weekly.search_labels(cfg.get("sources") or {}))
     if not args.email:
         print(subject + "\n\n" + text)
         return 0

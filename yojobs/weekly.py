@@ -27,7 +27,30 @@ def _when(iso: str) -> str:
     return datetime.fromisoformat(iso).astimezone().strftime("%a %d %b %H:%M")
 
 
-def build(history: History, cfg: dict, score=None) -> Tuple[str, str, str, List[str]]:
+def search_labels(sources_cfg: dict) -> dict:
+    """{source: ["term · place", ...]} for the enabled search-based sources, in the
+    same wording the sources record as found_by."""
+    out = {}
+    for source in ("linkedin", "indeed", "stepstone"):
+        scfg = sources_cfg.get(source) or {}
+        if not scfg.get("enabled", True) or not scfg.get("searches"):
+            continue
+        labels = []
+        for s in scfg["searches"]:
+            if source == "stepstone":
+                if s.get("remote") or not s.get("location"):
+                    continue
+                label = f"{s['term']} · {s['location']}"
+            else:
+                place = s.get("location") or ("anywhere" if source == "linkedin" else scfg.get("country", "Germany"))
+                label = f"{s['term']} · {place}{' (remote)' if s.get('remote') else ''}"
+            if label not in labels:
+                labels.append(label)
+        out[source] = labels
+    return out
+
+
+def build(history: History, cfg: dict, score=None, searches=None) -> Tuple[str, str, str, List[str]]:
     """-> (subject, text, html, near-miss urls listed). `score(near)` may add a CV match
     ("match") to near misses; scored ones are then listed best first."""
     st = history.week_stats()
@@ -61,6 +84,13 @@ def build(history: History, cfg: dict, score=None) -> Tuple[str, str, str, List[
     if parts:
         t += [f"Company boards that failed this week ({len(parts)}): check the jobs page, update or remove the entry:"]
         t += [f"  {p['part']:32} failed {p['failed']} of {p['runs']} runs  ({p['last_error'][:70]})" for p in parts]
+        t.append("")
+    stats = history.search_stats(searches) if searches else []
+    if stats:
+        t += ["Searches, last 7 days (matches emailed / near misses; 0/0 = candidates to drop):"]
+        for source in dict.fromkeys(s["source"] for s in stats):
+            t.append(f"  {source}:")
+            t += [f"    {s['matches']:>3} / {s['near']:<3} {s['search']}" for s in stats if s["source"] == source]
         t.append("")
     t += ["Sources:", f"  {'source':20} {'runs':>4} {'errors':>6} {'jobs/run':>8} {'matched':>7}  last good run"]
     for s in st["sources"]:
@@ -98,6 +128,13 @@ def build(history: History, cfg: dict, score=None) -> Tuple[str, str, str, List[
            + "".join(f'<li><b>{e(p["part"])}</b>: failed {p["failed"]} of {p["runs"]} runs '
                      f'<span style="color:#888">({e(p["last_error"][:90])})</span></li>' for p in parts)
            + "</ul>" if parts else "")
+        + (f'<h3 style="font-size:15px;margin:18px 0 4px">Searches, last 7 days</h3>'
+           f'<p style="font-size:12px;color:#666;margin:0 0 6px">Matches emailed / near misses per search; '
+           f'0 / 0 are candidates to drop.</p><table style="border-collapse:collapse">'
+           + "".join(f'<tr style="{"color:#999" if not (s["matches"] or s["near"]) else ""}">'
+                     f'<td {cell}>{e(s["source"])}</td><td {cell}>{e(s["search"])}</td>'
+                     f'<td {cell} align="right">{s["matches"]}</td><td {cell} align="right">{s["near"]}</td></tr>'
+                     for s in stats) + "</table>" if stats else "")
         + '<h3 style="font-size:15px;margin:18px 0 4px">Sources</h3>'
         f'<table style="border-collapse:collapse"><tr><th {cell} align="left">source</th><th {cell}>runs</th>'
         f'<th {cell}>errors</th><th {cell}>jobs/run</th><th {cell}>matched</th><th {cell} align="left">last good run</th>'

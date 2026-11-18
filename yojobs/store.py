@@ -124,6 +124,10 @@ class Store:
                    first_seen TEXT NOT NULL)"""
         )
         self.db.execute("CREATE INDEX IF NOT EXISTS seen_key ON seen(key)")
+        # which search found an emailed job (added in v0.16.0), for the weekly "searches" table
+        if "found_by" not in {row[1] for row in self.db.execute("PRAGMA table_info(seen)")}:
+            self.db.execute("ALTER TABLE seen ADD COLUMN found_by TEXT")
+            self.db.commit()
         self._rekey()
 
     def _rekey(self) -> None:
@@ -179,7 +183,7 @@ class Store:
         now = datetime.now(timezone.utc).isoformat(timespec="seconds")
         # REPLACE refreshes first_seen when a reopened job (same URL is rare) is sent again
         self.db.executemany(
-            "INSERT OR REPLACE INTO seen (url, key, title, company, source, first_seen) VALUES (?,?,?,?,?,?)",
-            [(j.url, job_key(j), j.title, j.company, j.source, now) for j in jobs],
+            "INSERT OR REPLACE INTO seen (url, key, title, company, source, first_seen, found_by) VALUES (?,?,?,?,?,?,?)",
+            [(j.url, job_key(j), j.title, j.company, j.source, now, j.found_by or None) for j in jobs],
         )
         self.db.commit()

@@ -58,6 +58,8 @@ class History:
         columns = {row[1] for row in db.execute("PRAGMA table_info(near_misses)")}
         if "description" not in columns:
             db.execute("ALTER TABLE near_misses ADD COLUMN description TEXT")
+        if "found_by" not in columns:  # added in v0.16.0
+            db.execute("ALTER TABLE near_misses ADD COLUMN found_by TEXT")
         db.commit()
 
     # --- meta ----------------------------------------------------------------
@@ -98,6 +100,23 @@ class History:
         if all(s == "ERROR" or not f for s, f, _ in rows):
             return f"returned no jobs in the last {failed_runs} runs (the site may have changed)"
         return None
+
+    def search_stats(self, searches: Dict[str, List[str]], days: int = 7) -> List[dict]:
+        """Per search of search-based sources: matches emailed and near misses in the
+        last `days`, including configured searches that found nothing.
+        `searches` = {source: ["term · place", ...]} from the config."""
+        since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        counts: Dict[Tuple[str, str], List[int]] = {}
+        for source, labels in searches.items():
+            for label in labels:
+                counts[(source, label)] = [0, 0]
+        for col, (table, when) in enumerate((("seen", "first_seen"), ("near_misses", "found_at"))):
+            for source, found_by, n in self.db.execute(
+                    f"SELECT source, found_by, COUNT(*) FROM {table} WHERE found_by IS NOT NULL AND {when} >= ? "
+                    f"GROUP BY source, found_by", (since,)):
+                counts.setdefault((source, found_by), [0, 0])[col] += n
+        return [dict(source=s, search=l, matches=c[0], near=c[1])
+                for (s, l), c in sorted(counts.items(), key=lambda kv: (kv[0][0], -kv[1][0], -kv[1][1], kv[0][1]))]
 
     def last_full_run(self, source: str) -> Optional[datetime]:
         """When the source last ran without being throttled (UTC), or None."""
@@ -174,10 +193,10 @@ class History:
     def add_near_misses(self, items: List[Tuple[Job, str]]) -> None:
         self.db.executemany(
             "INSERT OR IGNORE INTO near_misses (url, key, title, company, location, source, published, reason, found_at,"
-            " description) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            " description, found_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             [(j.url, job_key(j), j.title, j.company, j.location, j.source,
-              j.published.isoformat() if j.published else None, reason, _now(), (j.description or "")[:20000])
-             for j, reason in items])
+              j.published.isoformat() if j.published else None, reason, _now(), (j.description or "")[:20000],
+              j.found_by or None) for j, reason in items])
         self.db.commit()
 
     def pending_near_misses(self, limit: int = 60) -> List[dict]:

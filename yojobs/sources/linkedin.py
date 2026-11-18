@@ -176,6 +176,7 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
                 published=_published(row.get("date_posted")),
                 tags=[t for t in [_str(row.get("job_level")), _str(row.get("job_function"))] if t],
             )
+            jobs[url].found_by = f"{s['term']} · {where}"
             jobs[url]._li_id = _str(row.get("id")).replace("li-", "")
 
     # Only fetch descriptions for jobs that already pass title + location rules.

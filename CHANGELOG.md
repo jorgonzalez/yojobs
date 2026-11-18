@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.16.0 — #28 [feat][weekly] Show matches and near misses per search in the weekly email
+- LinkedIn, Indeed and StepStone jobs remember which search found them ("SRE Manager ·
+  Berlin"); stored with emailed jobs and near misses (new `found_by` columns, added
+  automatically to existing databases).
+- The weekly email (and `--weekly`) has a "Searches" table: matches emailed / near
+  misses per configured search over the last 7 days, including searches that found
+  nothing, to decide which searches to drop.
+
 ## v0.15.1 — #27 [perf][linkedin] Fewer LinkedIn requests: skip known jobs, shorter lookback
 - Job pages are only opened for candidates not already emailed or already near misses
   (the same jobs used to be reopened every run).

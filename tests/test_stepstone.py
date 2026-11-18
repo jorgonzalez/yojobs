@@ -75,6 +75,7 @@ class Fetch(unittest.TestCase):
         self.assertEqual(urls, ["https://www.stepstone.de/jobs/sre-team-lead/in-berlin",
                                 "https://www.stepstone.de/jobs/head-of-sre/in-berlin"])   # no remote/Germany search
         self.assertEqual(len(jobs), 3)                                                    # same jobs on both pages
+        self.assertEqual({j.found_by for j in jobs}, {"SRE Team Lead · Berlin"})        # first search that found them
         self.assertEqual(problems, [])
 
     def test_one_failed_search_is_reported_not_fatal(self):
