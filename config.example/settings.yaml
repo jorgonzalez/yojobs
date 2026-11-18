@@ -7,7 +7,7 @@ max_age_days: 3
 first_run_days: 30
 
 # Automatic runs (macOS launchd; install with ./scripts/install-launchd.sh).
-# launchd checks every 30 minutes; a run happens only between earliest and latest,
+# launchd checks every 10 minutes; a run happens only between earliest and latest,
 # at most max_runs_per_day, at least min_gap_hours apart. Missed runs are not
 # caught up and each day starts fresh.
 schedule:

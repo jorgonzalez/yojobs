@@ -5,6 +5,9 @@ from yojobs import __main__ as m
 
 
 class CvCheck(unittest.TestCase):
+    def tearDown(self):
+        m.progress.set_verbose(False)  # -v in a test must not leak into later tests
+
     def run_main(self, argv):
         calls = []
         with mock.patch.object(m, "load_config", return_value={}), mock.patch.object(m, "Store"), \

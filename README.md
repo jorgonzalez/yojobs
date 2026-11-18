@@ -90,7 +90,9 @@ while one is going stops immediately with a message.
 ./scripts/uninstall-launchd.sh    # remove
 ```
 
-launchd starts `yojobs --scheduled` every 30 minutes and once after login/wake.
+launchd starts `yojobs --scheduled` every 10 minutes and at login (its timer doesn't fire
+while the Mac sleeps, so frequent checks mean a due run starts soon after waking; a check
+that finds nothing due exits immediately and is logged at most once an hour).
 yojobs only runs (with `--email`) when due per `schedule:` in `config/settings.yaml`:
 between `earliest` and `latest`, at most `max_runs_per_day`, at least
 `min_gap_hours` apart. Missed runs are not caught up and each day starts fresh.

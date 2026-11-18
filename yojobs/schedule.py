@@ -1,6 +1,7 @@
 """Decide whether a scheduled run is due, and keep runs from overlapping.
 
-launchd starts `yojobs --scheduled` every 30 minutes (and once after the Mac wakes);
+launchd starts `yojobs --scheduled` every 10 minutes (and at login). Timers don't fire
+while the Mac sleeps, so checking often means a due run starts soon after it wakes;
 this module decides if that tick should actually run:
 
   * not before `earliest` or after `latest` (local time)
@@ -44,6 +45,15 @@ class State:
     def last_run(self) -> Optional[datetime]:
         runs = self.runs
         return runs[-1] if runs else None
+
+    def log_once_per_hour(self, now: datetime) -> bool:
+        """True the first time it's asked in each clock hour (for "not due" log lines)."""
+        hour = now.strftime("%Y-%m-%dT%H")
+        if self.data.get("not_due_logged") == hour:
+            return False
+        self.data["not_due_logged"] = hour
+        self.path.write_text(json.dumps(self.data, indent=2))
+        return True
 
     def record_run(self, when: datetime) -> None:
         runs = [r for r in self.runs if r > when - timedelta(days=7)] + [when]  # keep a week
