@@ -4,6 +4,13 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.15.1 — #27 [perf][linkedin] Fewer LinkedIn requests: skip known jobs, shorter lookback
+- Job pages are only opened for candidates not already emailed or already near misses
+  (the same jobs used to be reopened every run).
+- LinkedIn looks back only since its last full (unthrottled) run plus 2 hours, when
+  that's shorter than the general window: with one run a day ~27 h instead of 73 h,
+  so fewer result pages. After missed days it looks back further, up to the window.
+
 ## v0.15.0 — #26 [feat][sources] Limit a source to N runs a day (LinkedIn once a day)
 - New per-source setting `runs_per_day`: after that many runs today the source is
   skipped (shown as "skip", not as a problem). A run in which the source was throttled

@@ -184,6 +184,7 @@ def run(args, cfg: dict, store: Store, days: float):
     profiles = cfg.get("profiles") or []
 
     selected = {}
+    history_now = History(store.db)
     for name, scfg in (cfg.get("sources") or {}).items():
         scfg = scfg or {}
         if args.source and name not in args.source:
@@ -198,14 +199,17 @@ def run(args, cfg: dict, store: Store, days: float):
         terms = {alt.strip() for p in profiles for k in (p.get("all_of") or p.get("any_of") or [])
                  for alt in k.split("|")}
         scfg = dict(scfg, _keywords=sorted(terms),
-                    _title_ok=lambda job: any(jobfilter.title_ok(job, p) for p in profiles))
+                    _title_ok=lambda job: any(jobfilter.title_ok(job, p) for p in profiles),
+                    # already emailed or already a near miss: sources can skip extra requests for it
+                    _known=lambda job: store.is_seen(job) or history_now.known_near_miss(job.url),
+                    # when this source last ran fully: sources with their own lookback can start there
+                    _last_full_run=history_now.last_full_run(name))
         selected[name] = scfg
 
     results, stats, source_runs, near = [], [], [], []
     # companies you never want to hear from (applied already, not interested...)
     blocked = {_company_key(c) for c in cfg.get("blocked_companies") or [] if str(c).strip()}
     say(f"Checking {len(selected)} sources for jobs from the last {days:.3g} days")
-    history_now = History(store.db)
     for i, (name, scfg) in enumerate(selected.items(), 1):
         t0 = time.time()
         scfg["_problems"] = []  # parts of a source that failed (e.g. one company board)

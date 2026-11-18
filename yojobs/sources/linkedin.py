@@ -18,7 +18,7 @@ from __future__ import annotations
 import logging
 import random
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 from ..models import Job, strip_html, to_utc
@@ -124,7 +124,13 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
 
     # jobdrop warnings would break the one-line status display in quiet mode
     set_logger_level(logging.WARNING if is_verbose() else logging.ERROR)
-    hours_old = max(1, int((datetime.now(timezone.utc) - since).total_seconds() // 3600))
+    # Look back only since LinkedIn's last full run (+2 h margin) when that's more recent
+    # than the general window: fewer old results, fewer pages. After a missed day it
+    # automatically looks back further (never more than the general window).
+    last = cfg.get("_last_full_run")
+    if last and last - timedelta(hours=2) > since:
+        since = last - timedelta(hours=2)
+    hours_old = max(1, int((datetime.now(timezone.utc) - since).total_seconds() // 3600) + 1)
     title_ok = cfg.get("_title_ok") or (lambda job: True)
 
     jobs = {}
@@ -173,7 +179,13 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
             jobs[url]._li_id = _str(row.get("id")).replace("li-", "")
 
     # Only fetch descriptions for jobs that already pass title + location rules.
+    known = cfg.get("_known") or (lambda job: False)
     candidates = [j for j in jobs.values() if title_ok(j)]
+    # jobs already emailed or already near misses never come out differently: no job page
+    already = [j for j in candidates if known(j)]
+    candidates = [j for j in candidates if not known(j)]
+    if already:
+        say(f"    linkedin: {len(already)} of them already known (emailed or near miss); not reopened")
     say(f"    linkedin: {len(jobs)} jobs found, {len(candidates)} match title + location; fetching their descriptions")
     if candidates:
         li = LinkedIn()
