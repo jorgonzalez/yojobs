@@ -54,6 +54,10 @@ class History:
                    run_at TEXT NOT NULL, source TEXT NOT NULL, part TEXT NOT NULL, error TEXT);
                CREATE INDEX IF NOT EXISTS part_failures_src ON part_failures(source, part, run_at);
                CREATE TABLE IF NOT EXISTS meta (name TEXT PRIMARY KEY, value TEXT);""")
+        # ad text of near misses (added in v0.14.0), so the weekly email can CV-score them
+        columns = {row[1] for row in db.execute("PRAGMA table_info(near_misses)")}
+        if "description" not in columns:
+            db.execute("ALTER TABLE near_misses ADD COLUMN description TEXT")
         db.commit()
 
     # --- meta ----------------------------------------------------------------
@@ -144,26 +148,27 @@ class History:
 
     def add_near_misses(self, items: List[Tuple[Job, str]]) -> None:
         self.db.executemany(
-            "INSERT OR IGNORE INTO near_misses (url, key, title, company, location, source, published, reason, found_at)"
-            " VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT OR IGNORE INTO near_misses (url, key, title, company, location, source, published, reason, found_at,"
+            " description) VALUES (?,?,?,?,?,?,?,?,?,?)",
             [(j.url, job_key(j), j.title, j.company, j.location, j.source,
-              j.published.isoformat() if j.published else None, reason, _now()) for j, reason in items])
+              j.published.isoformat() if j.published else None, reason, _now(), (j.description or "")[:20000])
+             for j, reason in items])
         self.db.commit()
 
     def pending_near_misses(self, limit: int = 60) -> List[dict]:
         """Near misses not listed in a weekly email yet, and never emailed as a match;
         one per company + title (the same job from several portals)."""
         rows = self.db.execute(
-            """SELECT url, key, title, company, location, source, published, reason FROM near_misses
+            """SELECT url, key, title, company, location, source, published, reason, description FROM near_misses
                WHERE digested_at IS NULL AND key NOT IN (SELECT key FROM seen) AND url NOT IN (SELECT url FROM seen)
                ORDER BY published DESC""").fetchall()
         out, keys = [], set()
-        for url, key, title, company, location, source, published, reason in rows:
+        for url, key, title, company, location, source, published, reason, description in rows:
             if key in keys:
                 continue
             keys.add(key)
             out.append(dict(url=url, title=title, company=company, location=location or "", source=source,
-                            published=published, reason=reason))
+                            published=published, reason=reason, description=description or ""))
         return out[:limit]
 
     def mark_digested(self, urls: List[str]) -> None:

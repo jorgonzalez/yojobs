@@ -114,6 +114,57 @@ class Weekly(Base):
         self.assertEqual(self.h.pending_near_misses(), [])
 
 
+
+class NearMissScores(Base):
+    def test_old_database_gets_the_description_column(self):
+        import sqlite3
+        db = sqlite3.connect(":memory:")
+        db.execute("CREATE TABLE seen (url TEXT PRIMARY KEY, key TEXT NOT NULL, title TEXT, company TEXT, "
+                   "source TEXT, first_seen TEXT NOT NULL)")
+        db.execute("CREATE TABLE near_misses (url TEXT PRIMARY KEY, key TEXT, title TEXT, company TEXT, location TEXT, "
+                   "source TEXT, published TEXT, reason TEXT, found_at TEXT NOT NULL, digested_at TEXT)")
+        db.execute("INSERT INTO near_misses (url, key, title, found_at) VALUES ('u', 'c|t', 'Old one', '2026-11-17')")
+        h = History(db)
+        self.assertEqual(h.pending_near_misses()[0]["description"], "")   # old rows: no text, no crash
+
+    def test_scores_sort_and_show(self):
+        self.h.add_near_misses([(job("Head of Platform", "AWS only", url="https://a"), "no Kubernetes in the ad"),
+                                (job("Engineering Manager Infrastructure", "GCP", url="https://b"), "no Kubernetes in the ad"),
+                                (job("Head of DevOps", "", url="https://c"), "ad text not available")])
+        seen_text = {}
+
+        def score(near):
+            for n in near:
+                seen_text[n["url"]] = n["description"]
+                if n["url"] == "https://a":
+                    n["match"] = {"score": 60, "ratings": {"role": "partial"}, "strengths": [], "gaps": [], "summary": ""}
+                if n["url"] == "https://b":
+                    n["match"] = {"score": 90, "ratings": {"role": "strong"}, "strengths": ["GCP"], "gaps": [], "summary": "Fit."}
+        subject, text, body, urls = weekly.build(self.h, {}, score=score)
+        self.assertEqual(seen_text["https://a"], "AWS only")                  # ad text reaches the scorer
+        self.assertEqual(urls, ["https://b", "https://a", "https://c"])       # best first, unscored last
+        self.assertIn("CV match 90% · role: strong · strong: GCP", text)
+        self.assertIn("CV match 90%", body)
+
+    def test_real_scorer_with_fake_model(self):
+        import json
+        import tempfile
+        from unittest import mock
+        from yojobs import __main__ as m, matching
+        self.h.add_near_misses([(job("Head of Platform", "We run Kubernetes on GCP.", url="https://a"), "x")])
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "cv").mkdir()
+            (root / "cv" / "cv.md").write_text("Platform lead")
+            answer = {"role": "strong", "skills": "good", "strengths": [], "gaps_list": [], "summary": "ok"}
+            with mock.patch.object(m, "ROOT", root), \
+                    mock.patch.object(matching, "ollama_models", return_value=["gpt-oss:20b"]), \
+                    mock.patch.object(matching, "_post", lambda *a: {"message": {"content": json.dumps(answer)}}), \
+                    mock.patch.object(matching, "note"), mock.patch.object(matching, "say"):
+                scorer = m._near_miss_scorer({"matching": {"enabled": True}}, self.store)
+                text = weekly.build(self.h, {}, score=scorer)[1]
+        self.assertIn("CV match 88% · role: strong · skills: good", text)
+
 class NearMiss(unittest.TestCase):
     def test_only_missing_required_words(self):
         self.assertEqual(jf.near_miss(job("Head of Platform", "We run AWS."), PROFILE), "no Kubernetes in the ad")

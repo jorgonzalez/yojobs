@@ -46,6 +46,7 @@ weekly:
   enabled: true
   day: monday
   near_misses: true
+  near_misses_scored: 15     # CV-score up to this many near misses (if matching is on); best first
 
 # A source (or one company board) that errors or returns 0 jobs for this many runs
 # in a row (usually the site changed) triggers one warning email.

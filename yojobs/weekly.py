@@ -18,6 +18,7 @@ from datetime import datetime
 from typing import List, Tuple
 
 from .history import History
+from .mailer import _match_html, match_line
 
 
 def _when(iso: str) -> str:
@@ -26,10 +27,14 @@ def _when(iso: str) -> str:
     return datetime.fromisoformat(iso).astimezone().strftime("%a %d %b %H:%M")
 
 
-def build(history: History, cfg: dict) -> Tuple[str, str, str, List[str]]:
-    """-> (subject, text, html, near-miss urls listed)"""
+def build(history: History, cfg: dict, score=None) -> Tuple[str, str, str, List[str]]:
+    """-> (subject, text, html, near-miss urls listed). `score(near)` may add a CV match
+    ("match") to near misses; scored ones are then listed best first."""
     st = history.week_stats()
     near = history.pending_near_misses() if cfg.get("near_misses", True) else []
+    if near and score:
+        score(near)
+        near.sort(key=lambda n: -(n.get("match") or {}).get("score", -1))
     alerted = set(st["alerted"])
     broken = [s for s in st["sources"] if s["source"] in alerted]
     parts = st["parts"]
@@ -48,8 +53,10 @@ def build(history: History, cfg: dict) -> Tuple[str, str, str, List[str]]:
         t += [f"Near misses ({len(near)}): passed every rule except the required words. Worth a look:", ""]
         for n in near:
             date = n["published"][:10] if n["published"] else "?"
-            t += [f"- {n['title']} — {n['company']}", f"    {n['location'][:80]} · {n['source']} {date} · {n['reason']}",
-                  f"    {n['url']}"]
+            t += [f"- {n['title']} — {n['company']}", f"    {n['location'][:80]} · {n['source']} {date} · {n['reason']}"]
+            if n.get("match"):
+                t.append(f"    {match_line(n['match'])}")
+            t.append(f"    {n['url']}")
         t.append("")
     if parts:
         t += [f"Company boards that failed this week ({len(parts)}): check the jobs page, update or remove the entry:"]
@@ -74,7 +81,7 @@ def build(history: History, cfg: dict) -> Tuple[str, str, str, List[str]]:
         f'<li style="margin-bottom:8px"><a href="{e(n["url"])}" style="font-weight:600;color:#1a1a1a">{e(n["title"])}</a>'
         f' — {e(n["company"])}<br><span style="font-size:12px;color:#666">{e(n["location"][:80])} · '
         f'{e(n["source"])} {e((n["published"] or "")[:10])} · <span style="color:#b45309">{e(n["reason"])}</span>'
-        f'</span></li>' for n in near)
+        f'</span>{_match_html(n["match"]) if n.get("match") else ""}</li>' for n in near)
     body = (
         '<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:680px">'
         f'<p style="font-size:14px">Last 7 days: <b>{st["runs"]}</b> runs, ~<b>{st["jobs_per_run"]:,}</b> jobs checked '
