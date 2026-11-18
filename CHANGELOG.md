@@ -4,6 +4,11 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.13.4 — #21 [fix][cli] Let --cv-check continue with the run it's combined with
+- `--cv-check` on its own still only shows the CV match setup. Combined with run
+  options (`--days`, `--email`, `--source`, `--match`, `-v`…) it now shows the setup
+  and then runs; before, `--cv-check --days 90 -v --email` silently did nothing else.
+
 ## v0.13.3 — #20 [fix][dedupe] Treat the same job retitled on another portal as a duplicate
 - Duplicates were only caught by an identical normalized company + title, so the same
   job was emailed twice when portals titled it differently (Miaplaza on Himalayas and
