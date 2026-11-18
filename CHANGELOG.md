@@ -4,6 +4,15 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.20.0 — #32 [feat][sources] Add Remote Rocketship from its job sitemaps
+- New source `remoterocketship`: its English job sitemaps (worldwide + rest of world,
+  3 requests, ~50,000 URLs); keeps jobs updated within the window whose URL says they're
+  open to Germany, Berlin, Europe, EMEA or worldwide; titles filtered before anything else;
+  job pages (schema.org JobPosting: full ad, exact countries, date, company) only for new
+  candidates. The German section (machine-translated titles/pages) isn't used.
+- First preview (30 days): 5,362 jobs in scope, 10 candidates, 3 matches (nTopology
+  EM Distributed Computing Platform, Consensys DevOps Manager, Mimica Head of Platform).
+
 ## v0.19.0 — #31 [feat][sources] Add the Remote.com job board
 - New source `remotecom`: one search page per term of the `only: [remotecom]` group in
   searches.yaml (`/jobs/all?query=…`, allowed by robots.txt); job data from the page:

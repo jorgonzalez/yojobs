@@ -36,3 +36,6 @@ sources:
   # Remote.com job board: searches the `only: [remotecom]` terms in searches.yaml; full ad only
   # for jobs that pass the title + place rules
   remotecom: {enabled: true, delay_seconds: 4}
+  # Remote Rocketship: its English job sitemaps (3 requests); jobs open to Germany, Berlin, Europe,
+  # EMEA or worldwide; job pages only for new candidates
+  remoterocketship: {enabled: true, delay_seconds: 4}
