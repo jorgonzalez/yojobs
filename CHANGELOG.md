@@ -4,6 +4,13 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.22.1 — #37 [fix][discovery] Survive huge or odd job-board answers
+- Board discovery crashed on a company with a very large Ashby board: the answer is cut off
+  at 3 MB and isn't valid JSON. A cut-off answer that starts with a job list now counts as a
+  board (Ashby, Lever, Recruitee — the name is read from the first offer), and an error from
+  one system no longer stops the others.
+- The weekly summary is sent even if board discovery fails (noted in the log).
+
 ## v0.22.0 — #36 [feat][companies] Read company boards on Lever's EU servers
 - Companies hosted on Lever's EU servers (jobs.eu.lever.co/<id>, e.g. Quantinuum) weren't
   found: yojobs only asked api.lever.co. Write them as `lever: [eu:<id>]` in

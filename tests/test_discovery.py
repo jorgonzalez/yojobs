@@ -38,6 +38,33 @@ class FindBoard(unittest.TestCase):
         self.assertTrue(discovery.covered("Mistral AI", ["ashby:mistral.ai"]))
 
 
+class OddAnswers(unittest.TestCase):
+    """Boards bigger than the 3 MB read limit come back cut off (not valid JSON)."""
+
+    def probe(self, fn, body, bid="acme"):
+        with mock.patch.object(discovery, "_get", lambda url: body):
+            return fn(bid)
+
+    def test_cut_off_boards_still_count(self):
+        self.assertEqual(self.probe(discovery._ashby, b'{"jobs": [{"id": "1", "title": "VP, Str'), "")
+        self.assertEqual(self.probe(discovery._lever, b'[{"id": "1", "text": "EM'), "")
+        self.assertEqual(self.probe(discovery._recruitee,
+                                    b'{"offers":[{"id":1,"company_name":"Acme GmbH","title":"EM'), "Acme GmbH")
+
+    def test_garbage_is_no_board(self):
+        self.assertIsNone(self.probe(discovery._ashby, b"<html>maintenance</html>"))
+        self.assertIsNone(self.probe(discovery._ashby, b'{"jobs": []}'))
+        self.assertIsNone(self.probe(discovery._lever, b"[]"))
+
+    def test_a_crashing_system_does_not_stop_the_others(self):
+        def boom(bid):
+            raise ValueError("bad JSON")
+        probes = fake_probes({("ashby", "acmecloud"): ""})
+        probes["greenhouse"] = boom
+        with mock.patch.object(discovery, "PROBES", probes), mock.patch.object(discovery.time, "sleep"):
+            self.assertEqual(discovery.find_board("Acme Cloud"), "ashby:acmecloud")
+
+
 class Run(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
