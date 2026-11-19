@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.21.0 — #34 [feat][log] List each match's outcome and a summary after a run
+- "emailed 0 new of 2 matches" didn't say why. After an `--email` run the log now lists
+  every match as `new` (emailed now), `sent` (already sent on <date>, and as which title or
+  from which source if different) or `duplicate` (same job as an earlier match in this run),
+  then a summary: "2 matches: 0 new, 1 already sent before, 1 duplicate in this run".
+  Preview runs print the summary line too.
+- README: dedupe note updated for the bracket rule of v0.20.1.
+
 ## v0.20.1 — #33 [fix][dedupe] Read bracketed title parts when only one title has them
 - "Head of Platform (Infrastructure & DevOps)" (StartupMap) and "Head of Platform –
   Infrastructure, DevOps" (Remote Rocketship) weren't recognised as the same Mimica job:

@@ -185,6 +185,36 @@ def _company_key(name: str) -> str:
     return norm_company(name).replace(" ", "")
 
 
+def _day(iso: str) -> str:
+    try:
+        return datetime.fromisoformat(iso).astimezone().strftime("%-d %b")
+    except (TypeError, ValueError):
+        return "?"
+
+
+def match_report(outcomes, emailed: bool = True) -> list[str]:
+    """One line per match saying what happened to it, then a summary, e.g.
+    "  summary: 2 matches: 0 new, 2 already sent before, 0 duplicates in this run"."""
+    lines = ["  matches:"] if outcomes else []
+    for j, kind, (title, source, first_seen) in outcomes:
+        what = f"{j.company} — {j.title} ({j.source})"[:110]
+        if kind == "new":
+            why = "emailed now" if emailed else ""
+        elif kind == "sent":
+            via = [] if title == j.title else [f'as "{title[:60]}"']
+            via += [] if source == j.source else [f"from {source}"]
+            why = f"already sent {_day(first_seen)}" + (f" ({', '.join(via)})" if via else "")
+        else:
+            why = f'same job as "{title[:60]}" ({source}) in this run'
+        lines.append(f"    {kind:9}  {what}" + (f"  → {why}" if why else ""))
+    count = {k: sum(1 for _, kind, _ in outcomes if kind == k) for k in ("new", "sent", "duplicate")}
+    dup = count["duplicate"]
+    lines.append(f"  summary: {len(outcomes)} matches: {count['new']} new"
+                 f"{' (emailed)' if emailed and count['new'] else ''}, "
+                 f"{count['sent']} already sent before, {dup} duplicate{'' if dup == 1 else 's'} in this run")
+    return lines
+
+
 def run(args, cfg: dict, store: Store, days: float):
     """One full pass. Returns (exit code, ok) where ok means the run did its job."""
     since = datetime.now(timezone.utc) - timedelta(days=days)
@@ -261,7 +291,7 @@ def run(args, cfg: dict, store: Store, days: float):
     progress.end()
     results.sort(key=lambda j: (j.score, j.published or since), reverse=True)
 
-    new = store.filter_new(results)
+    new, outcomes = store.sort_matches(results)
     # optional CV match (config/matching.yaml): score the new jobs, best first; never hides any
     matching.score_jobs(new, cfg, ROOT, store.db)
     new = matching.by_score(new)
@@ -294,6 +324,8 @@ def run(args, cfg: dict, store: Store, days: float):
         print(f"{datetime.now():%Y-%m-%d %H:%M} emailed {len(new)} new of {len(results)} matches")
         for name, status, msg in stats:
             print(f"  {name:15} {status:5} {msg}")
+        for line in match_report(outcomes):
+            print(line)
         return 0, True
 
     for j in results:
@@ -312,6 +344,8 @@ def run(args, cfg: dict, store: Store, days: float):
     print(f"\n{len(results)} jobs, last {days:g} days ({len(new)} new, marked *)")
     for name, status, msg in stats:
         print(f"  {name:15} {status:5} {msg}")
+    if results and not args.all:
+        print(match_report(outcomes, emailed=False)[-1])
     return (1, False) if all_failed else (0, True)
 
 

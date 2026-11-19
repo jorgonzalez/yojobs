@@ -88,6 +88,20 @@ class Dedupe(unittest.TestCase):
         # but the exact old URL stays blocked forever
         self.assertEqual(self.store.filter_new([job("Senior DevOps Engineer", url="https://wwr/1")]), [])
 
+    def test_sort_matches_says_why(self):
+        self.store.mark_seen([job("Hands-on Engineering Manager, Infrastructure", "Miaplaza", "https://himalayas/m", "himalayas")])
+        sent = job("Hands-on Engineering Manager, Infrastructure (Remote)", "Miaplaza Inc", "https://arbeitnow/m", "arbeitnow")
+        fresh = job("DevOps Manager", "Consensys", source="remoterocketship")
+        repeat = job("DevOps Manager (Remote)", "Consensys", source="startupmap")
+        new, outcomes = self.store.sort_matches([sent, fresh, repeat])
+        self.assertEqual(new, [fresh])
+        kinds = [(j.source, kind) for j, kind, _ in outcomes]
+        self.assertEqual(kinds, [("arbeitnow", "sent"), ("remoterocketship", "new"), ("startupmap", "duplicate")])
+        self.assertEqual(outcomes[0][2][:2], ("Hands-on Engineering Manager, Infrastructure", "himalayas"))
+        self.assertEqual(outcomes[2][2][:2], ("DevOps Manager", "remoterocketship"))
+        self.assertTrue(self.store.is_seen(sent))
+        self.assertFalse(self.store.is_seen(fresh))
+
     def test_rekey_old_database(self):
         self.store.mark_seen([job("Senior DevOps Engineer (m/w/d)", url="https://a/1")])
         self.store.db.execute("UPDATE seen SET key = 'old-format'")
