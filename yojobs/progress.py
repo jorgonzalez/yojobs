@@ -20,6 +20,7 @@ import sys
 from datetime import datetime
 
 _verbose = False
+_dated = False   # scheduled runs: date on every line, so old log lines can be removed by age
 _status = ""     # current step text (quiet mode)
 _drawn = False   # is a status line currently on screen?
 
@@ -27,6 +28,11 @@ _drawn = False   # is a status line currently on screen?
 def set_verbose(value: bool) -> None:
     global _verbose
     _verbose = bool(value)
+
+
+def set_dated(value: bool) -> None:
+    global _dated
+    _dated = bool(value)
 
 
 def is_verbose() -> bool:
@@ -41,7 +47,7 @@ def _tty() -> bool:
 
 
 def _line(msg: str) -> None:
-    print(f"{datetime.now():%H:%M:%S}  {msg}", file=sys.stderr, flush=True)
+    print(f"{datetime.now():{'%Y-%m-%d %H:%M:%S' if _dated else '%H:%M:%S'}}  {msg}", file=sys.stderr, flush=True)
 
 
 def _clear() -> None:

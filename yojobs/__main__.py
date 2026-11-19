@@ -14,11 +14,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from . import filter as jobfilter
-from . import __version__, mailer, matching, weekly, workmode
+from . import __version__, logs, mailer, matching, weekly, workmode
 from .history import History, SourceRun
 from . import progress
 from .progress import note, say, step
-from .schedule import RunLock, State, is_due, trim_log
+from .schedule import RunLock, State, is_due
 from .sources import SOURCES
 from .config import default_path, load_config
 from .models import Job
@@ -54,6 +54,7 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
     # the launchd log is always verbose
     progress.set_verbose(args.verbose or args.scheduled)
+    progress.set_dated(args.scheduled)
 
     if args.split_config:
         from .config_split import run as split_run
@@ -99,7 +100,8 @@ def main(argv=None) -> int:
 
 
 def scheduled(args, cfg: dict, store: Store) -> int:
-    trim_log(Path.home() / "Library" / "Logs" / "yojobs.log")
+    for done in logs.trim_all(cfg.get("logs")):  # settings.yaml logs: keep_days / max_mb
+        note(f"Log trimmed: {done}")
     state = State(ROOT / cfg.get("schedule_state", "schedule_state.json"))
     now = datetime.now()
     due, reason = is_due(cfg.get("schedule") or {}, state, now)
