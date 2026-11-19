@@ -58,6 +58,28 @@ class Recruitee(unittest.TestCase):
 
 
 
+LEVER_JOB = [{"text": "Lead Reliability Engineer", "hostedUrl": "https://jobs.eu.lever.co/quantinuum/1",
+              "categories": {"location": "Berlin"}, "createdAt": 1763370000000, "descriptionPlain": "Kubernetes",
+              "workplaceType": "hybrid"}]
+
+
+class Lever(unittest.TestCase):
+    def urls(self, board):
+        seen = []
+        def fake(url, params=None):
+            seen.append(url)
+            return LEVER_JOB
+        with mock.patch.object(companies, "get_json", fake):
+            jobs = companies._lever(board)
+        return seen, jobs
+
+    def test_us_and_eu_servers(self):
+        self.assertEqual(self.urls("spotify")[0], ["https://api.lever.co/v0/postings/spotify"])
+        urls, jobs = self.urls("eu:quantinuum")
+        self.assertEqual(urls, ["https://api.eu.lever.co/v0/postings/quantinuum"])
+        self.assertEqual((jobs[0].company, jobs[0].url), ("Quantinuum", "https://jobs.eu.lever.co/quantinuum/1"))
+
+
 class Teamtailor(unittest.TestCase):
     FEED = (Path(__file__).parent / "fixture_teamtailor.xml").read_bytes()
 

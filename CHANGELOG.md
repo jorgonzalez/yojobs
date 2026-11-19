@@ -4,6 +4,12 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.22.0 — #36 [feat][companies] Read company boards on Lever's EU servers
+- Companies hosted on Lever's EU servers (jobs.eu.lever.co/<id>, e.g. Quantinuum) weren't
+  found: yojobs only asked api.lever.co. Write them as `lever: [eu:<id>]` in
+  config/companies.yaml; they're read from api.eu.lever.co.
+- The weekly board discovery also tries Lever EU and suggests `lever: eu:<id>`.
+
 ## v0.21.1 — #35 [fix][linkedin] Spread LinkedIn requests out to avoid throttling
 - LinkedIn answered 'too many requests' (429) on 18 and 19 Nov after 1 and 14 searches:
   the 20 searches went out in ~4 minutes (4–8 s apart, 2–5 s between job pages).

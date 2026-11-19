@@ -309,6 +309,7 @@ Find its jobs page, take the id from the address, and add it to the right list i
 |---|---|
 | `job-boards.greenhouse.io/<id>` | `greenhouse` |
 | `jobs.lever.co/<id>` | `lever` |
+| `jobs.eu.lever.co/<id>` (Lever's EU servers) | `lever`, written `eu:<id>` |
 | `jobs.ashbyhq.com/<id>` | `ashby` |
 | `<id>.jobs.personio.de` | `personio` (for `.jobs.personio.com` write `<id>.com`) |
 | `<id>.recruitee.com` | `recruitee` |

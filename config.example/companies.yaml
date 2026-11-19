@@ -1,7 +1,7 @@
 # Company career pages, read through the hiring systems' official public job APIs.
 # Add a company under its system; the id is in its jobs page address:
 #   greenhouse  job-boards.greenhouse.io/<id>
-#   lever       jobs.lever.co/<id>
+#   lever       jobs.lever.co/<id>   (jobs.eu.lever.co/<id>: write eu:<id>)
 #   ashby       jobs.ashbyhq.com/<id>
 #   personio    <id>.jobs.personio.de   (for .jobs.personio.com write <id>.com)
 #   recruitee   <id>.recruitee.com

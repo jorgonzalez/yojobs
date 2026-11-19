@@ -81,9 +81,13 @@ def _greenhouse(bid):
     return (json.loads(body).get("name") or "") if body else None
 
 
-def _lever(bid):
-    body = _get(f"https://api.lever.co/v0/postings/{bid}?mode=json&limit=1")
+def _lever(bid, host="api.lever.co"):
+    body = _get(f"https://{host}/v0/postings/{bid}?mode=json&limit=1")
     return "" if body and json.loads(body) else None
+
+
+def _lever_eu(bid):
+    return _lever(bid, "api.eu.lever.co")
 
 
 def _ashby(bid):
@@ -120,7 +124,7 @@ def _teamtailor(bid):
 
 
 PROBES: Dict[str, Callable[[str], Optional[str]]] = {
-    "greenhouse": _greenhouse, "ashby": _ashby, "lever": _lever,
+    "greenhouse": _greenhouse, "ashby": _ashby, "lever": _lever, "lever:eu": _lever_eu,
     "personio": _personio, "recruitee": _recruitee, "teamtailor": _teamtailor,
 }
 
@@ -142,7 +146,7 @@ def find_board(company: str, delay: float = 0.3) -> str:
 
 def covered(company: str, boards: List[str]) -> bool:
     """Is the company already in companies.yaml (any system, any spelling we'd try)?"""
-    ids = {b.split(":", 1)[1].split(".")[0].replace("-", "") for b in boards if ":" in b}
+    ids = {b.rsplit(":", 1)[1].split(".")[0].replace("-", "") for b in boards if ":" in b}
     return any(v.replace("-", "") in ids for v, _ in variants(company))
 
 
