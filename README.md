@@ -78,6 +78,12 @@ Progress goes to stderr; results go to stdout:
 - scheduled runs are always verbose, so `~/Library/Logs/yojobs.log` has the full detail
   (with the date on every line).
 
+The end of a scheduled run in the log: one line per source with how many jobs it
+fetched, how many are recent and how many matched, and how long it took (each match
+and what happened to it follow below, left out here):
+
+![The end of a scheduled run in yojobs.log: one line per source](docs/run-log.jpg)
+
 Logs (`logs:` in `config/settings.yaml`): each scheduled check deletes lines older than
 `keep_days` from `yojobs.log` and `ollama.log`, and keeps each file under `max_mb`
 (default 2 MB without settings; the newest half is kept). The files are rewritten in place,
