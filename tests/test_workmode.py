@@ -53,3 +53,56 @@ class Describe(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+from yojobs import filter as jobfilter
+from yojobs.workmode import month_office_days, office_required
+
+YUBO = ("Trust & Flexibility: Our hybrid model calls for only two office days a month; the rest is up to the "
+        "rhythm that suits you. Cool Workplace: enjoy our amazing Parisian office and our many hybrid work options.")
+
+
+class OfficeRequired(unittest.TestCase):
+    def test_office_presence_counts(self):
+        for text in [YUBO,
+                     "You'll join us 3 days a week in the office.",
+                     "We meet in our Paris office twice a week.",
+                     "This is a hybrid role based in Amsterdam.",
+                     "Hybrid working model: 2 days per week on-site.",
+                     "Wir arbeiten in einem hybriden Arbeitsmodell mit 2 Tagen pro Woche im Büro."]:
+            self.assertTrue(office_required(text), text)
+
+    def test_optional_or_occasional_does_not(self):
+        for text in ["Fully remote within Europe; we meet at quarterly offsites.",
+                     "Remote or hybrid, your choice: our Berlin office is open if you like.",
+                     "We get together twice a year at our company retreat.",
+                     "Co-working budget, and you can visit the office if you want.",
+                     "Remote-first team spread across 12 countries.",
+                     "Experience with hybrid cloud environments (AWS + on-prem).",
+                     ""]:
+            self.assertFalse(office_required(text), text)
+
+    def test_month_days(self):
+        self.assertEqual(month_office_days("two office days a month"), "2")
+        self.assertEqual(month_office_days("1-2 days per month in the office"), "1-2")
+        self.assertEqual(month_office_days("20 days of vacation per month"), "")      # no office nearby
+
+
+PROFILE = {"onsite_cities": ["Berlin"], "remote_regions": ["Germany", "Europe", "EMEA", "Worldwide"]}
+
+
+class RemoteLabelButHybrid(unittest.TestCase):
+    def remote_job(self, description, location="Europe, France"):
+        return Job(source="euremotejobs", title="SRE Platform Manager", company="Yubo",
+                   url="https://x", location=location, description=description, remote=True)
+
+    def test_hybrid_elsewhere_is_out(self):
+        self.assertFalse(jobfilter.place_ok(self.remote_job(YUBO), PROFILE))
+
+    def test_hybrid_in_berlin_is_in(self):
+        ad = "Our hybrid model calls for two office days a month in our Berlin office."
+        self.assertTrue(jobfilter.place_ok(self.remote_job(ad), PROFILE))
+        self.assertEqual(describe(self.remote_job(ad)), "hybrid · 2 office days/month")
+
+    def test_real_remote_unchanged(self):
+        self.assertTrue(jobfilter.place_ok(self.remote_job("Fully remote; quarterly offsites."), PROFILE))

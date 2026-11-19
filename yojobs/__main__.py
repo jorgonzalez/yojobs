@@ -285,7 +285,7 @@ def run(args, cfg: dict, store: Store, days: float):
                         if reason:
                             near.append((j, reason))
         for j in kept:
-            if not jobfilter.is_remote(j):  # on-site / hybrid (e.g. Berlin): say how much office
+            if not jobfilter.is_remote(j) or workmode.office_required(j.description):  # how much office
                 j.work_hint = workmode.describe(j)
         results.extend(kept)
         source_runs.append(SourceRun(name, "ok", len(jobs), len(recent), len(kept), time.time() - t0,

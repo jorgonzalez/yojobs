@@ -135,7 +135,7 @@ A job is reported if it passes **any** profile. Checks, in order:
 | `exclude_titles` | drop the job if any of these appear (searched in `exclude_in`, default: `match_in`); a list, or named groups of lists |
 | `ad_must_mention` | every entry must appear in the ad (searched in `ad_must_mention_in`); `"a\|b"` = either word |
 | `where: onsite_cities` | on-site / hybrid jobs are kept only in these cities (any work mode is fine there) |
-| `where: remote_regions` | remote jobs must be open to one of these (e.g. Germany, Europe, Worldwide) or say plain "Remote"; empty = anywhere |
+| `where: remote_regions` | remote jobs must be open to one of these (e.g. Germany, Europe, Worldwide) or say plain "Remote"; empty = anywhere. A "remote" job whose ad asks for regular office days ("2 office days a month", "3 days a week in the office", "our hybrid model") counts as hybrid: its office must be in `onsite_cities` |
 | `title_must_have` | named word lists; the `match_in` text needs one word from **each** group (AND between groups, OR inside) |
 | `title_any` | extra OR words; each distinct match adds +1 to the score |
 | `min_score` | at least this many distinct matches (groups + `title_any`) |

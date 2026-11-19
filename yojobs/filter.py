@@ -26,7 +26,7 @@ from __future__ import annotations
 import re
 from typing import Dict, Iterable, List, Pattern
 
-from . import language
+from . import language, workmode
 from .models import Job
 
 _cache: Dict[str, Pattern] = {}
@@ -87,6 +87,10 @@ def place_ok(job: Job, profile: dict) -> bool:
     if cities and _hits(cities, job.location):
         return True  # any work mode is fine in your city
     if is_remote(job):
+        if workmode.office_required(job.description):
+            # labelled remote, but the ad asks for office days: hybrid, so the office must be
+            # in one of your cities ("2 office days a month in our Paris office" -> no)
+            return bool(cities) and bool(_hits(cities, job.description))
         return location_ok(job.location, regions)
     return not cities and location_ok(job.location, regions)
 
