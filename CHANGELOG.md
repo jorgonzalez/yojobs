@@ -4,6 +4,13 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.21.1 — #35 [fix][linkedin] Spread LinkedIn requests out to avoid throttling
+- LinkedIn answered 'too many requests' (429) on 18 and 19 Nov after 1 and 14 searches:
+  the 20 searches went out in ~4 minutes (4–8 s apart, 2–5 s between job pages).
+  Now 20–40 s between searches and 8–15 s between job pages, configurable per site
+  as `search_pause` / `page_pause` in `config/sources.yaml`. LinkedIn takes ~15–20 min
+  in a scheduled run.
+
 ## v0.21.0 — #34 [feat][log] List each match's outcome and a summary after a run
 - "emailed 0 new of 2 matches" didn't say why. After an `--email` run the log now lists
   every match as `new` (emailed now), `sent` (already sent on <date>, and as which title or

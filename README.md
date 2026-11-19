@@ -287,7 +287,7 @@ so "emailed 0 new of 2 matches" explains itself:
 | remoterocketship | job sitemaps | English sitemaps; jobs open to Germany/Europe/EMEA/worldwide; job page only for new candidates |
 | remotecom | search pages | remote.com/jobs: `only: [remotecom]` terms; where they hire, work mode, salary; full ad for candidates |
 | stepstone | search pages | `searches.yaml` terms in cities (no remote searches); excerpt + skills only, job pages not opened; ~1 min |
-| linkedin | jobdrop | searches in config; descriptions fetched only for title/location matches; ~10 min |
+| linkedin | jobdrop | searches in config; descriptions fetched only for title/location matches; 20–40 s between searches and 8–15 s between job pages (`search_pause`, `page_pause`); ~15–20 min |
 | indeed | jobdrop | one Indeed country per config; descriptions included; fast |
 
 Any source can be limited to its first N runs a day with `runs_per_day` in

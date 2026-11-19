@@ -4,11 +4,15 @@ To keep requests low (LinkedIn blocks aggressive scrapers):
   1. run each configured search WITHOUT descriptions (one request per 25 results)
   2. keep only jobs whose title/location already pass a profile (`_title_ok`)
   3. fetch the description only for those, to check required words (Kubernetes)
+  4. pause between requests (default 20-40 s between searches, 8-15 s between job
+     pages): LinkedIn reacts to bursts, and a scheduled run has time to spare
 
 config.yaml:
   linkedin:
     enabled: true
     results_per_search: 50
+    search_pause: [20, 40]   # seconds between searches (random within the range)
+    page_pause: [8, 15]      # seconds between job pages
     searches:
       - {term: "DevOps Manager", location: Berlin}               # on-site/hybrid/remote in Berlin
       - {term: "DevOps Manager", location: Germany, remote: true} # remote within Germany
@@ -95,6 +99,21 @@ def job_page(session, job_id: str):
         return "", ""
 
 
+SEARCH_PAUSE = (20, 40)
+PAGE_PAUSE = (8, 15)
+
+
+def pause_range(value, default):
+    """[low, high] seconds from the config (a single number means exactly that), else default."""
+    if isinstance(value, (int, float)):
+        return float(value), float(value)
+    try:
+        low, high = (float(x) for x in value)
+        return (low, high) if low <= high else (high, low)
+    except (TypeError, ValueError):
+        return default
+
+
 def rotated(searches: list, now: float = None) -> list:
     """Start at a different search each run (runs are >= 5 h apart), so if LinkedIn
     throttles a run and the rest are skipped, the next run covers them first."""
@@ -132,6 +151,8 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
         since = last - timedelta(hours=2)
     hours_old = max(1, int((datetime.now(timezone.utc) - since).total_seconds() // 3600) + 1)
     title_ok = cfg.get("_title_ok") or (lambda job: True)
+    search_pause = pause_range(cfg.get("search_pause"), SEARCH_PAUSE)
+    page_pause = pause_range(cfg.get("page_pause"), PAGE_PAUSE)
 
     jobs = {}
     searches = rotated(cfg.get("searches") or [])
@@ -144,7 +165,7 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
                 problems.append(("throttled", msg))
             break
         if i:
-            time.sleep(random.uniform(4, 8))
+            time.sleep(random.uniform(*search_pause))
         where = f"{s.get('location') or 'anywhere'}{' (remote)' if s.get('remote') else ''}"
         say(f"    linkedin search {i + 1}/{len(searches)}: \"{s['term']}\" in {where}")
         remote = bool(s.get("remote"))
@@ -196,7 +217,7 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
                 note(f"linkedin: 'too many requests' (429); skipped {len(candidates) - n} descriptions this run")
                 break
             if n:
-                time.sleep(random.uniform(2, 5))
+                time.sleep(random.uniform(*page_pause))
             say(f"    linkedin description {n + 1}/{len(candidates)}: {job.title[:60]}")
             job.description, page_location = job_page(li.session, job._li_id)
             # Search cards sometimes have no location; an empty location would count as

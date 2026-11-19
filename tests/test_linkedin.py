@@ -89,6 +89,32 @@ class StopsWhenThrottled(unittest.TestCase):
 
 
 
+class Pauses(unittest.TestCase):
+    def test_range_from_config(self):
+        self.assertEqual(linkedin.pause_range(None, (20, 40)), (20, 40))
+        self.assertEqual(linkedin.pause_range([30, 60], (20, 40)), (30.0, 60.0))
+        self.assertEqual(linkedin.pause_range([60, 30], (20, 40)), (30.0, 60.0))
+        self.assertEqual(linkedin.pause_range(10, (20, 40)), (10.0, 10.0))
+        self.assertEqual(linkedin.pause_range("soon", (20, 40)), (20, 40))
+
+    def test_searches_are_spread_out(self):
+        throttle = linkedin.Throttle()
+        cfg = {"searches": [{"term": t, "location": "Berlin"} for t in "ABC"], "_problems": []}
+        since = datetime.now(timezone.utc) - timedelta(days=1)
+        with mock.patch.object(linkedin.time, "sleep") as sleep, mock.patch.object(linkedin, "say"), \
+                mock.patch.object(linkedin, "note"), mock.patch.object(linkedin, "rotated", lambda s: s):
+            linkedin._fetch(cfg, since, lambda **kw: pd.DataFrame([]), lambda level: None, None, None, throttle)
+        waits = [c.args[0] for c in sleep.call_args_list]
+        self.assertEqual(len(waits), 2)                          # between the 3 searches, not before the first
+        self.assertTrue(all(20 <= w <= 40 for w in waits), waits)
+
+        cfg = dict(cfg, search_pause=[1, 2])
+        with mock.patch.object(linkedin.time, "sleep") as sleep, mock.patch.object(linkedin, "say"), \
+                mock.patch.object(linkedin, "note"), mock.patch.object(linkedin, "rotated", lambda s: s):
+            linkedin._fetch(cfg, since, lambda **kw: pd.DataFrame([]), lambda level: None, None, None, throttle)
+        self.assertTrue(all(1 <= c.args[0] <= 2 for c in sleep.call_args_list))
+
+
 PAGE = """<html><body><h1 class="top-card-layout__title topcard__title">Engineering Manager - Infrastructure</h1>
 <span class="topcard__flavor topcard__flavor--bullet">Cracow Metropolitan Area</span>
 <div class="description__text"><div class="show-more-less-html__markup"><p>Fully remote and global, we are
