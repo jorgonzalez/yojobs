@@ -79,21 +79,6 @@ def is_due(cfg: dict, state: State, now: datetime) -> Tuple[bool, str]:
     return True, "first run today"
 
 
-def trim_log(path: Path, max_bytes: int = 2_000_000, keep_bytes: int = 1_000_000) -> None:
-    """Keep the launchd log from growing forever: when it passes max_bytes,
-    keep only the last keep_bytes."""
-    try:
-        if path.stat().st_size <= max_bytes:
-            return
-        with open(path, "rb") as fh:
-            fh.seek(-keep_bytes, 2)
-            tail = fh.read()
-        with open(path, "wb") as fh:
-            fh.write(b"[... older log lines trimmed ...]\n" + tail[tail.find(b"\n") + 1:])
-    except OSError:
-        pass
-
-
 class RunLock:
     """Non-blocking exclusive lock: a second run while one is going just exits."""
 

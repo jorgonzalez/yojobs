@@ -54,3 +54,11 @@ weekly:
 # in a row (usually the site changed) triggers one warning email.
 health:
   failed_runs: 3
+
+# Log files (checked by every scheduled run): delete lines older than keep_days, and
+# never let a file grow past max_mb (then the newest half is kept). Without keep_days
+# only the size limit applies (default 2 MB). Files default to yojobs' and Ollama's logs.
+logs:
+  keep_days: 90
+  max_mb: 50
+  # files: [~/Library/Logs/yojobs.log, ~/Library/Logs/ollama.log]

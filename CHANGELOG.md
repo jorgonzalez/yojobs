@@ -4,6 +4,15 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.23.0 — #38 [feat][logs] Delete log lines older than N days (logs: keep_days)
+- New `logs:` in `config/settings.yaml`: `keep_days` deletes lines older than that many days,
+  `max_mb` caps each file's size (newest half kept), `files` defaults to yojobs' and
+  Ollama's logs. Without settings, the old behaviour stays (yojobs.log capped at 2 MB);
+  ollama.log now gets the same 2 MB cap.
+- Scheduled runs write the date on every log line (`2026-11-19 07:07:18`), so lines can be
+  dated; Ollama's own timestamps are understood too.
+- Files are rewritten in place: launchd and `ollama serve` keep appending to them.
+
 ## v0.22.1 — #37 [fix][discovery] Survive huge or odd job-board answers
 - Board discovery crashed on a company with a very large Ashby board: the answer is cut off
   at 3 MB and isn't valid JSON. A cut-off answer that starts with a job list now counts as a

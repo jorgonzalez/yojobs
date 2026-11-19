@@ -26,7 +26,7 @@ cp -R config.example config            # then edit config/settings.yaml (email) 
 
 | file | what's in it |
 |---|---|
-| `settings.yaml` | how yojobs runs: look-back, schedule, email, database, weekly summary, health |
+| `settings.yaml` | how yojobs runs: look-back, schedule, email, database, weekly summary, health, logs |
 | `profile.yaml` | what you're looking for: title words, required and excluded words, places, languages |
 | `blocklist.yaml` | companies you never want to see |
 | `sources.yaml` | which portals are on/off, and their options |
@@ -75,7 +75,13 @@ Progress goes to stderr; results go to stdout:
   summary get lines of their own.
 - `-v` / `--verbose`: every step on its own timestamped line (every search, page and
   company board).
-- scheduled runs are always verbose, so `~/Library/Logs/yojobs.log` has the full detail.
+- scheduled runs are always verbose, so `~/Library/Logs/yojobs.log` has the full detail
+  (with the date on every line).
+
+Logs (`logs:` in `config/settings.yaml`): each scheduled check deletes lines older than
+`keep_days` from `yojobs.log` and `ollama.log`, and keeps each file under `max_mb`
+(default 2 MB without settings; the newest half is kept). The files are rewritten in place,
+so launchd and `ollama serve` keep writing to them.
 
 The first run (empty `seen.sqlite`) looks back `first_run_days` (30) instead of
 `max_age_days` (3).
