@@ -18,7 +18,7 @@ import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import List
+from typing import List, Optional, Tuple
 
 from .models import Job
 
@@ -160,35 +160,51 @@ class Store:
     def _cutoff(self) -> str:
         return (datetime.now(timezone.utc) - timedelta(days=self.key_days)).isoformat(timespec="seconds")
 
-    def is_seen(self, job: Job) -> bool:
+    def sent_before(self, job: Job) -> Optional[Tuple[str, str, str]]:
+        """(title, source, first_seen) of the emailed job this one repeats, or None."""
         row = self.db.execute(
-            "SELECT 1 FROM seen WHERE url = ? OR (key = ? AND first_seen >= ?) LIMIT 1",
+            "SELECT title, source, first_seen FROM seen WHERE url = ? OR (key = ? AND first_seen >= ?) LIMIT 1",
             (job.url, job_key(job), self._cutoff()),
         ).fetchone()
         if row is not None:
-            return True
+            return row
         # the same job under another title on another portal (same company, similar title)
         company = norm_company(job.company)
         if not company:
-            return False
+            return None
         rows = self.db.execute(
-            "SELECT title FROM seen WHERE substr(key, 1, ?) = ? AND first_seen >= ?",
+            "SELECT title, source, first_seen FROM seen WHERE substr(key, 1, ?) = ? AND first_seen >= ?",
             (len(company) + 1, company + "|", self._cutoff()),
         ).fetchall()
-        return any(similar_titles(job.title, t or "") for (t,) in rows)
+        return next((r for r in rows if similar_titles(job.title, r[0] or "")), None)
 
-    def filter_new(self, jobs: List[Job]) -> List[Job]:
-        new, keys, taken = [], set(), []
+    def is_seen(self, job: Job) -> bool:
+        return self.sent_before(job) is not None
+
+    def sort_matches(self, jobs: List[Job]) -> Tuple[List[Job], List[Tuple[Job, str, Tuple[str, str, str]]]]:
+        """The new jobs, plus every match with its outcome and the job it repeats (title, source, first_seen):
+        "new", "sent" (emailed before) or "duplicate" (same job as an earlier match in this run)."""
+        new, outcomes, keys, taken = [], [], {}, []
         for j in jobs:
             k = job_key(j)
             company = norm_company(j.company)
-            if k in keys or self.is_seen(j) or \
-                    any(c == company and company and similar_titles(j.title, t) for c, t in taken):
-                continue  # also dedupes within this run
-            keys.add(k)
-            taken.append((company, j.title))
-            new.append(j)
-        return new
+            earlier = keys.get(k) or next((t for c, t in taken
+                                           if c == company and company and similar_titles(j.title, t.title)), None)
+            if earlier is not None:
+                outcomes.append((j, "duplicate", (earlier.title, earlier.source, "")))
+                continue
+            sent = self.sent_before(j)
+            if sent is not None:
+                outcomes.append((j, "sent", (sent[0] or "", sent[1] or "", sent[2] or "")))
+            else:
+                outcomes.append((j, "new", ("", "", "")))
+                new.append(j)
+            keys[k] = j
+            taken.append((company, j))
+        return new, outcomes
+
+    def filter_new(self, jobs: List[Job]) -> List[Job]:
+        return self.sort_matches(jobs)[0]
 
     def mark_seen(self, jobs: List[Job]) -> None:
         now = datetime.now(timezone.utc).isoformat(timespec="seconds")

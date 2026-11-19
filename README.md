@@ -249,9 +249,19 @@ the Dock. Ollama's own log: `~/Library/Logs/ollama.log`.
 A job is never emailed twice: its URL is remembered forever, and its normalized
 company + title for `dedupe_days` (default 60), which catches reposts and the same
 job on another portal. Retitled copies count too: same company and titles sharing
-more than 65% of their words (brackets ignored). Normalization drops legal suffixes (GmbH, Inc, B.V....),
-gender tags like (m/w/d), location tails like "- Remote, Germany", and expands
-Sr/Jr/Mgr.
+more than 65% of their words (bracketed parts count when both titles have them). Normalization
+drops legal suffixes (GmbH, Inc, B.V....), gender tags like (m/w/d), location tails like
+"- Remote, Germany", and expands Sr/Jr/Mgr.
+
+After an `--email` run, the log lists every match with what happened to it, then a summary,
+so "emailed 0 new of 2 matches" explains itself:
+
+```
+  matches:
+    sent       Miaplaza — Hands-on Engineering Manager, Infrastructure (himalayas)  → already sent 17 Nov
+    duplicate  Miaplaza — Hands-on Engineering Manager DevOps (arbeitnow)  → same job as "Hands-on …" (himalayas) in this run
+  summary: 2 matches: 0 new, 1 already sent before, 1 duplicate in this run
+```
 
 ## Sources
 
