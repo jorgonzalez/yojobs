@@ -3,6 +3,7 @@ applicant-tracking systems most tech companies use:
 
   greenhouse  https://boards-api.greenhouse.io/v1/boards/<id>/jobs
   lever       https://api.lever.co/v0/postings/<id>?mode=json
+              ("eu:<id>": api.eu.lever.co, for companies on Lever's EU servers, jobs.eu.lever.co/<id>)
   ashby       https://api.ashbyhq.com/posting-api/job-board/<id>
   personio    https://<id>.jobs.personio.de/xml   (many German companies)
   recruitee   https://<id>.recruitee.com/api/offers/
@@ -36,6 +37,7 @@ from .rss import parse_rfc822
 GH_LIST = "https://boards-api.greenhouse.io/v1/boards/{}/jobs"
 GH_JOB = "https://boards-api.greenhouse.io/v1/boards/{}/jobs/{}"
 LEVER = "https://api.lever.co/v0/postings/{}"
+LEVER_EU = "https://api.eu.lever.co/v0/postings/{}"
 ASHBY = "https://api.ashbyhq.com/posting-api/job-board/{}"
 
 
@@ -69,8 +71,10 @@ def _greenhouse(board, title_ok):
 
 
 def _lever(board):
+    """board "<id>" (Lever's US servers) or "eu:<id>" (its EU servers)."""
+    region, _, board = board.rpartition(":")
     jobs = []
-    for j in get_json(LEVER.format(board), {"mode": "json"}):
+    for j in get_json((LEVER_EU if region.lower() == "eu" else LEVER).format(board), {"mode": "json"}):
         cats = j.get("categories") or {}
         locs = cats.get("allLocations") or [cats.get("location") or ""]
         jobs.append(Job(

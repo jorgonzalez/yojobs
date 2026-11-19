@@ -30,6 +30,13 @@ class FindBoard(unittest.TestCase):
         self.assertEqual(self.find("Acme Cloud", {("ashby", "acmecloud"): ""}), "ashby:acmecloud")
         self.assertEqual(self.find("Acme Cloud", {("ashby", "acme"): ""}), "")       # first word only: not trusted
 
+    def test_lever_eu(self):
+        self.assertEqual(self.find("Quantinuum", {("lever:eu", "quantinuum"): ""}), "lever:eu:quantinuum")
+
+    def test_covered_by_an_eu_board(self):
+        self.assertTrue(discovery.covered("Quantinuum", ["lever:eu:quantinuum"]))
+        self.assertTrue(discovery.covered("Mistral AI", ["ashby:mistral.ai"]))
+
 
 class Run(unittest.TestCase):
     def setUp(self):
