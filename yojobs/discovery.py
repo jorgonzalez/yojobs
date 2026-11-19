@@ -81,9 +81,18 @@ def _greenhouse(bid):
     return (json.loads(body).get("name") or "") if body else None
 
 
+def _json(body: bytes, starts: bytes):
+    """Parsed JSON, or True when the body was cut off at the size limit but clearly starts
+    with a non-empty job list (a big board), or None."""
+    try:
+        return json.loads(body)
+    except ValueError:
+        return True if starts in body[:300].replace(b" ", b"") else None
+
+
 def _lever(bid, host="api.lever.co"):
     body = _get(f"https://{host}/v0/postings/{bid}?mode=json&limit=1")
-    return "" if body and json.loads(body) else None
+    return "" if body and _json(body, b"[{") else None
 
 
 def _lever_eu(bid):
@@ -92,7 +101,8 @@ def _lever_eu(bid):
 
 def _ashby(bid):
     body = _get(f"https://api.ashbyhq.com/posting-api/job-board/{bid}")
-    return "" if body and json.loads(body).get("jobs") else None
+    data = _json(body, b'"jobs":[{') if body else None
+    return "" if data is True or (isinstance(data, dict) and data.get("jobs")) else None
 
 
 def _personio(bid):
@@ -108,7 +118,11 @@ def _recruitee(bid):
     body = _get(f"https://{bid}.recruitee.com/api/offers/")
     if not body:
         return None
-    offers = json.loads(body).get("offers") or []
+    data = _json(body, b'"offers":[{')
+    if data is True:  # cut off: take the name from the first offer
+        m = re.search(rb'"company_name"\s*:\s*"([^"]*)"', body)
+        return m.group(1).decode("utf-8", "replace") if m else ""
+    offers = (data.get("offers") or []) if isinstance(data, dict) else []
     return (offers[0].get("company_name") or "") if offers else None
 
 
@@ -133,7 +147,10 @@ def find_board(company: str, delay: float = 0.3) -> str:
     """'system:id' of the company's board, or ''."""
     for bid, full in variants(company):
         for system, probe in PROBES.items():
-            name = probe(bid)
+            try:
+                name = probe(bid)
+            except Exception:  # an odd answer from one system must not stop the others
+                name = None
             time.sleep(delay)
             if name is None:
                 continue
