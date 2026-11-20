@@ -137,10 +137,18 @@ def _teamtailor(bid):
     return (channel.findtext("title") or "") if channel is not None and channel.find("item") is not None else None
 
 
+# Unused Pinpoint accounts (e.g. beam, hellobetter) show the same sample jobs; they're no one's board.
+PINPOINT_SAMPLE = {"head of dei - belfast", "head of dei - us", "head of dei - uk", "marketing manager",
+                   "customer service rep"}
+
+
 def _pinpoint(bid):
     body = _get(f"https://{bid}.pinpointhq.com/postings.json")
     data = _json(body, b'"data":[{') if body else None
-    return "" if data is True or (isinstance(data, dict) and data.get("data")) else None
+    if isinstance(data, dict) and data.get("data"):
+        titles = {(j.get("title") or "").strip().lower() for j in data["data"] if isinstance(j, dict)}
+        return None if titles <= PINPOINT_SAMPLE else ""
+    return "" if data is True else None
 
 
 PROBES: Dict[str, Callable[[str], Optional[str]]] = {
