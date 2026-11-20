@@ -8,6 +8,9 @@ applicant-tracking systems most tech companies use:
   personio    https://<id>.jobs.personio.de/xml   (many German companies)
   recruitee   https://<id>.recruitee.com/api/offers/
   teamtailor  https://<id>.teamtailor.com/jobs.rss   (or a company's own career domain)
+  pinpoint    https://<id>.pinpointhq.com/postings.json   (or a company's own career domain,
+              e.g. "pinpoint:careers.admgroup.com"); no posting date, so new jobs are
+              told apart by the seen list; the company name comes from the domain
 
 Not supported: SmartRecruiters (its API's robots.txt only allows LinkedIn's bot)
 and Workable (rate-limits even a handful of requests).
@@ -213,6 +216,39 @@ def _recruitee(board):
     return jobs
 
 
+def _pinpoint_host(board: str) -> str:
+    return board if "." in board else f"{board}.pinpointhq.com"
+
+
+def _pinpoint_company(host: str) -> str:
+    labels = host.lower().split(".")
+    name = labels[0] if host.endswith(".pinpointhq.com") else (labels[-2] if len(labels) >= 2 else host)
+    return name.replace("-", " ").title()
+
+
+def _pinpoint(board):
+    host = _pinpoint_host(board)
+    jobs = []
+    for j in get_json(f"https://{host}/postings.json").get("data") or []:
+        loc = j.get("location") or {}
+        place = ", ".join(dict.fromkeys(x for x in (loc.get("city"), loc.get("province"), loc.get("name")) if x))
+        mode = j.get("workplace_type") or ""
+        jobs.append(Job(
+            source="companies",
+            title=(j.get("title") or "").strip(),
+            company=_pinpoint_company(host),
+            url=j.get("url") or "",
+            location=place,
+            published=None,  # Pinpoint's feed has no posting date
+            description=strip_html(" ".join(j.get(k) or "" for k in ("description", "key_responsibilities",
+                                                                      "skills_knowledge_expertise"))),
+            tags=[t for t in [((j.get("job") or {}).get("department") or {}).get("name")] if t],
+            remote=_mode(mode),
+            work_mode=j.get("workplace_type_text") or mode,
+        ))
+    return jobs
+
+
 def fetch(cfg, since):
     title_ok = cfg.get("_title_ok") or (lambda job: True)
     boards = cfg.get("boards") or []
@@ -234,6 +270,8 @@ def fetch(cfg, since):
                 found = _recruitee(board)
             elif ats == "teamtailor":
                 found = _teamtailor(board)
+            elif ats == "pinpoint":
+                found = _pinpoint(board)
             else:
                 say(f"    companies: unknown system '{ats}' for {board}")
                 continue

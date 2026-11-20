@@ -325,6 +325,7 @@ Find its jobs page, take the id from the address, and add it to the right list i
 | `<id>.jobs.personio.de` | `personio` (for `.jobs.personio.com` write `<id>.com`) |
 | `<id>.recruitee.com` | `recruitee` |
 | `<id>.teamtailor.com` (or a company's own career site "powered by Teamtailor") | `teamtailor` (id, or the career domain) |
+| `<id>.pinpointhq.com` (or a company's own career site run by Pinpoint) | `pinpoint` (id, or the career domain); no posting dates, so the company name comes from the domain |
 
 SmartRecruiters and Workable aren't supported: SmartRecruiters' API robots.txt only
 allows LinkedIn's bot, and Workable rate-limits after a handful of requests.

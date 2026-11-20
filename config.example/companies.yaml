@@ -6,6 +6,7 @@
 #   personio    <id>.jobs.personio.de   (for .jobs.personio.com write <id>.com)
 #   recruitee   <id>.recruitee.com
 #   teamtailor  <id>.teamtailor.com   (or the company's own career domain, e.g. careers.acme.com)
+#   pinpoint    <id>.pinpointhq.com   (or the company's own career domain, e.g. careers.acme.com)
 # A board that stops working is reported in the weekly email.
 companies:
   greenhouse: [gitlab, grafanalabs, elastic, datadog, mongodb, canonical, vercel, cloudflare,

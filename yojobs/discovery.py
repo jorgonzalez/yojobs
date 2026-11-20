@@ -1,8 +1,8 @@
 """Board discovery: find the public job boards of companies that already sent you
 matches or near misses, and suggest them for config/companies.yaml.
 
-There is no list of all companies on Greenhouse, Lever, Ashby, Personio, Recruitee or
-Teamtailor, but every match/near miss names a company that hires for your profile.
+There is no list of all companies on Greenhouse, Lever, Ashby, Personio, Recruitee,
+Teamtailor or Pinpoint, but every match/near miss names a company that hires for your profile.
 For each such company not yet in companies.yaml (checked once, remembered), try a few
 spellings of its name on each system's public API. A board only counts if it is
 clearly that company's: its name must match where the system reports one; where it
@@ -137,9 +137,15 @@ def _teamtailor(bid):
     return (channel.findtext("title") or "") if channel is not None and channel.find("item") is not None else None
 
 
+def _pinpoint(bid):
+    body = _get(f"https://{bid}.pinpointhq.com/postings.json")
+    data = _json(body, b'"data":[{') if body else None
+    return "" if data is True or (isinstance(data, dict) and data.get("data")) else None
+
+
 PROBES: Dict[str, Callable[[str], Optional[str]]] = {
     "greenhouse": _greenhouse, "ashby": _ashby, "lever": _lever, "lever:eu": _lever_eu,
-    "personio": _personio, "recruitee": _recruitee, "teamtailor": _teamtailor,
+    "personio": _personio, "recruitee": _recruitee, "teamtailor": _teamtailor, "pinpoint": _pinpoint,
 }
 
 

@@ -1,0 +1,76 @@
+{
+ "data": [
+  {
+   "id": "567234",
+   "title": "Infrastructure Lead ",
+   "url": "https://careers.admgroup.com/en/postings/b0aaa737-c3ab-4b17-a696-b7e8c9f205fe",
+   "path": "/en/postings/b0aaa737-c3ab-4b17-a696-b7e8c9f205fe",
+   "workplace_type": "remote",
+   "workplace_type_text": "Fully remote",
+   "employment_type": "full_time",
+   "location": {
+    "id": "38348",
+    "city": "Europe",
+    "name": "Europe",
+    "postal_code": "",
+    "province": "Europe",
+    "street_address": ""
+   },
+   "job": {
+    "id": "557471",
+    "requisition_id": "756",
+    "department": {
+     "id": "38778",
+     "name": "IT"
+    },
+    "division": null,
+    "structure_custom_group_one": {
+     "id": "7900",
+     "name": "WORLDWIDE",
+     "title": "Business Unit"
+    }
+   },
+   "description": "<div><!--block-->Own the infrastructure layer for our AI practice.</div>",
+   "key_responsibilities": "<ul><li><!--block-->Run large containerised applications on Kubernetes.</li></ul>",
+   "skills_knowledge_expertise": null,
+   "reporting_to": null,
+   "deadline_at": null
+  },
+  {
+   "id": "567232",
+   "title": "Infrastructure Lead ",
+   "url": "https://careers.admgroup.com/en/postings/9febe862-bf4e-42cf-aae8-7767eb31f0f8",
+   "path": "/en/postings/9febe862-bf4e-42cf-aae8-7767eb31f0f8",
+   "workplace_type": "hybrid",
+   "workplace_type_text": "Hybrid",
+   "employment_type": "full_time",
+   "location": {
+    "id": "31472",
+    "city": "Camden",
+    "name": "London",
+    "postal_code": "WC1R 4HE",
+    "province": "London",
+    "street_address": "26-28 Bedford Row"
+   },
+   "job": {
+    "id": "557471",
+    "requisition_id": "756",
+    "department": {
+     "id": "38778",
+     "name": "IT"
+    },
+    "division": null,
+    "structure_custom_group_one": {
+     "id": "7900",
+     "name": "WORLDWIDE",
+     "title": "Business Unit"
+    }
+   },
+   "description": "<div>Office role.</div>",
+   "key_responsibilities": null,
+   "skills_knowledge_expertise": null,
+   "reporting_to": null,
+   "deadline_at": null
+  }
+ ]
+}

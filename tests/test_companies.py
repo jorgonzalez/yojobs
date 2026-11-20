@@ -1,3 +1,4 @@
+import json
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -106,6 +107,39 @@ class Teamtailor(unittest.TestCase):
         from yojobs.config import normalize
         cfg = normalize({"sources": {"companies": True}, "companies": {"teamtailor": ["acme", "careers.example.com"]}})
         self.assertEqual(cfg["sources"]["companies"]["boards"], ["teamtailor:acme", "teamtailor:careers.example.com"])
+
+
+class Pinpoint(unittest.TestCase):
+    FEED = json.loads((Path(__file__).parent / "fixture_pinpoint.json").read_text())
+
+    def test_feed(self):
+        urls = []
+        with mock.patch.object(companies, "get_json", lambda url, params=None: urls.append(url) or self.FEED):
+            jobs = companies._pinpoint("careers.admgroup.com")
+            other = companies._pinpoint("acme")
+        self.assertEqual(urls, ["https://careers.admgroup.com/postings.json", "https://acme.pinpointhq.com/postings.json"])
+        first, second = jobs
+        self.assertEqual((first.title, first.company, first.location), ("Infrastructure Lead", "Admgroup", "Europe"))
+        self.assertEqual((first.remote, first.work_mode, first.published), (True, "Fully remote", None))
+        self.assertIn("Kubernetes", first.description)
+        self.assertNotIn("<li>", first.description)
+        self.assertEqual((second.remote, second.location), (False, "Camden, London"))
+        self.assertEqual(other[0].company, "Acme")
+
+    def test_filters(self):
+        from yojobs import filter as jobfilter
+        profile = {"groups": {"role": ["Lead"], "area": ["Infrastructure"]}, "all_of": ["Kubernetes"],
+                   "onsite_cities": ["Berlin"], "remote_regions": ["Europe"]}
+        with mock.patch.object(companies, "get_json", lambda url, params=None: self.FEED):
+            remote, london = companies._pinpoint("careers.admgroup.com")
+        self.assertTrue(jobfilter.apply(remote, profile))
+        self.assertFalse(jobfilter.apply(london, profile))      # hybrid, London
+
+    def test_config_accepts_pinpoint(self):
+        from yojobs.config import normalize
+        cfg = normalize({"sources": {"companies": True}, "companies": {"pinpoint": ["careers.admgroup.com"]}})
+        self.assertEqual(cfg["sources"]["companies"]["boards"], ["pinpoint:careers.admgroup.com"])
+
 
 if __name__ == "__main__":
     unittest.main()
