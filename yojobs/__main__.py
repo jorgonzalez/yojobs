@@ -268,7 +268,7 @@ def run(args, cfg: dict, store: Store, days: float):
         # runs_per_day (e.g. LinkedIn once a day): skip the source after its daily runs,
         # unless asked for explicitly with --source
         limit = scfg.get("runs_per_day")
-        if limit and not args.source and history_now.full_runs_today(name) >= int(limit):
+        if limit and not args.source and history_now.runs_today(name) >= int(limit):
             stats.append((name, "skip", f"already ran {limit}x today (runs_per_day)"))
             say(f"[{i}/{len(selected)}] {name}: skipped, already ran {limit}x today (runs_per_day: {limit})")
             continue

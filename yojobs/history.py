@@ -131,17 +131,15 @@ class History:
     def known_near_miss(self, url: str) -> bool:
         return self.db.execute("SELECT 1 FROM near_misses WHERE url = ? LIMIT 1", (url,)).fetchone() is not None
 
-    def full_runs_today(self, source: str, now: Optional[datetime] = None) -> int:
-        """How many times the source ran today (local date) without being throttled
-        (a run that recorded a "throttled" part doesn't count)."""
+    def runs_today(self, source: str, now: Optional[datetime] = None) -> int:
+        """How many times the source ran today (local date), throttled runs included: a site
+        that throttled us shouldn't be asked again the same day. (The next day's run still
+        looks back to the last full run, see last_full_run.)"""
         now = now or datetime.now()
         rows = self.db.execute("SELECT run_at FROM source_runs WHERE source = ? AND status = 'ok' AND run_at >= ?",
                                (source, (datetime.now(timezone.utc) - timedelta(days=2)).isoformat())).fetchall()
-        throttled = {r for (r,) in self.db.execute(
-            "SELECT run_at FROM part_failures WHERE source = ? AND part = 'throttled'", (source,))}
         today = now.date()
-        return sum(1 for (r,) in rows
-                   if r not in throttled and datetime.fromisoformat(r).astimezone().date() == today)
+        return sum(1 for (r,) in rows if datetime.fromisoformat(r).astimezone().date() == today)
 
     def failing_parts(self, source: str, failed_runs: int) -> Dict[str, str]:
         """Parts of a source (e.g. company boards) that failed in each of the
