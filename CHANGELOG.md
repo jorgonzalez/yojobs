@@ -4,6 +4,13 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.25.1 — #44 [docs][config] Explain that short title words cover longer ones
+- `config.example/profile.yaml`: words match anywhere in the title, so "Manager" already
+  covers "Engineering Manager" and "Lead" covers "Team Lead" / "Tech Lead"; listing both
+  finds no extra jobs. Whole words only ("Lead" ≠ "Leader", "Leiter" ≠ "Teamleiter"), and
+  searches.yaml terms are different (each is its own search).
+- The example's role list drops "Engineering Manager" (covered by "Manager").
+
 ## v0.25.0 — #43 [feat][enrich] Open the ad for jobs from title-only sources
 - Welcome to the Jungle, StartupMap and 4dayweek list jobs without the ad text, and 4dayweek
   without a location: its empty location counted as "remote, no restriction", so Sainsbury's

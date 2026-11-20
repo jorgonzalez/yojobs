@@ -12,6 +12,12 @@
 #                        (at least min_score words from groups + title_any must match)
 # Words match whole words, case-insensitively; a space also matches a hyphen
 # ("Site Reliability" matches "Site-Reliability").
+# A word matches anywhere in the title, so a short word already covers the longer ones:
+# "Manager" matches "Engineering Manager", "Lead" matches "Team Lead", "Tech Lead" and
+# "Lead Platform Engineer". Listing both finds no extra jobs (only the email's matched
+# words get longer): keep the short word, skip the duplicates. Whole words only: "Lead"
+# doesn't match "Leader" or "Leadership", "Manager" doesn't match "Management", "Leiter"
+# doesn't match "Teamleiter". (searches.yaml is different: each term there is its own search.)
 #
 # This example: leadership roles in platform / infrastructure, on-site in Berlin or
 # remote in Europe. More example profiles are at the end of this file.
@@ -20,8 +26,9 @@ profile:
   name: platform-leadership
 
   title_must_have:
-    role: [Manager, Engineering Manager, Head of, Director, VP, Vice President, Team Lead,
-           Teamleiter, Teamleitung, Leiter, Leitung]
+    role: [Manager, Head of, Director, VP, Vice President, Team Lead, Teamleiter, Teamleitung,
+           Leiter, Leitung]   # "Manager" covers "Engineering Manager"; "Lead" would also
+                              # catch "Tech Lead" and "Lead ... Engineer" roles
     area: [Platform, Plattform, Infrastructure, Infrastruktur, DevOps, SRE, Site Reliability,
            Reliability, Cloud, GCP, Kubernetes]
 
