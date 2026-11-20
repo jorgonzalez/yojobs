@@ -245,7 +245,9 @@ def run(args, cfg: dict, store: Store, days: float):
                     # already emailed or already a near miss: sources can skip extra requests for it
                     _known=lambda job: store.is_seen(job) or history_now.known_near_miss(job.url),
                     # when this source last ran fully: sources with their own lookback can start there
-                    _last_full_run=history_now.last_full_run(name))
+                    _last_full_run=history_now.last_full_run(name),
+                    # small saved state (meta table), e.g. where LinkedIn's searches continue
+                    _state=history_now)
         selected[name] = scfg
 
     results, stats, source_runs, near = [], [], [], []

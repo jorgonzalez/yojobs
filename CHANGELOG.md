@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.24.0 — #41 [feat][linkedin] Continue searches where the last run stopped
+- LinkedIn's search order used to rotate with the clock (one step every 4 hours), so after a
+  429 the next run didn't really start with the skipped searches. Now the next start is saved
+  (meta table `linkedin_next_search`): after a 429 the next run starts with the search LinkedIn
+  interrupted (it may be incomplete), so every search is reached even if each run only gets
+  through a few. After a complete run the start moves on by one.
+- If the saved search is no longer in `searches.yaml`, the configured order is used.
+
 ## v0.23.1 — #40 [fix][filter] Treat "remote" ads that require office days as hybrid
 - Yubo's "SRE Platform Manager" (Paris) arrived as remote: LinkedIn and euremotejobs label it
   remote, but the ad says "our hybrid model calls for only two office days a month" in the

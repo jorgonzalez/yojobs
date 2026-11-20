@@ -114,13 +114,30 @@ def pause_range(value, default):
         return default
 
 
-def rotated(searches: list, now: float = None) -> list:
-    """Start at a different search each run (runs are >= 5 h apart), so if LinkedIn
-    throttles a run and the rest are skipped, the next run covers them first."""
+STATE_KEY = "linkedin_next_search"   # meta table: the search the next run starts with
+
+
+def search_key(s: dict) -> str:
+    return f"{s.get('term')}|{s.get('location') or ''}|{'remote' if s.get('remote') else ''}"
+
+
+def rotated(searches: list, start: str = None) -> list:
+    """Start with the saved search (`start`, a search_key): where the last run stopped
+    when LinkedIn throttled it, or the next one in line after a complete run. Unknown or
+    no start (first run, searches changed) -> the configured order."""
+    keys = [search_key(s) for s in searches]
+    i = keys.index(start) if start in keys else 0
+    return searches[i:] + searches[:i]
+
+
+def next_start(searches: list, done: int, throttled: bool) -> str:
+    """The search the next run starts with. Throttled: the one LinkedIn stopped (it may be
+    incomplete), so it's repeated. Complete: the next in line, so the first place moves on."""
     if not searches:
-        return []
-    start = int((now if now is not None else time.time()) // (4 * 3600)) % len(searches)
-    return searches[start:] + searches[:start]
+        return ""
+    if throttled:
+        return search_key(searches[max(done - 1, 0)])
+    return search_key(searches[1 % len(searches)])
 
 
 def fetch(cfg, since):
@@ -155,11 +172,14 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
     page_pause = pause_range(cfg.get("page_pause"), PAGE_PAUSE)
 
     jobs = {}
-    searches = rotated(cfg.get("searches") or [])
+    state = cfg.get("_state")  # History (meta table): get(name) / set(name, value)
+    searches = rotated(cfg.get("searches") or [], state.get(STATE_KEY) if state else None)
+    done = 0
     for i, s in enumerate(searches):
         if throttle.hit:
             msg = (f"LinkedIn said 'too many requests' (429) after {i}/{len(searches)} searches; "
-                   f"skipped the other {len(searches) - i} this run (the next run starts with them)")
+                   f"skipped the other {len(searches) - i} this run (the next run starts with "
+                   f"\"{searches[i - 1]['term']}\", which LinkedIn interrupted)")
             note(f"linkedin: {msg}")
             if problems is not None:
                 problems.append(("throttled", msg))
@@ -169,6 +189,7 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
         where = f"{s.get('location') or 'anywhere'}{' (remote)' if s.get('remote') else ''}"
         say(f"    linkedin search {i + 1}/{len(searches)}: \"{s['term']}\" in {where}")
         remote = bool(s.get("remote"))
+        done = i + 1
         df = scrape_jobs(
             site_name="linkedin",
             search_term=s["term"],
@@ -199,6 +220,9 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
             )
             jobs[url].found_by = f"{s['term']} · {where}"
             jobs[url]._li_id = _str(row.get("id")).replace("li-", "")
+
+    if state and searches:
+        state.set(STATE_KEY, next_start(searches, done, throttle.hit))
 
     # Only fetch descriptions for jobs that already pass title + location rules.
     known = cfg.get("_known") or (lambda job: False)

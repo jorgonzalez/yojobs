@@ -60,13 +60,64 @@ class GentleSession(unittest.TestCase):
         self.assertFalse(self.throttle.hit)
 
 
+class State:
+    def __init__(self, **values):
+        self.values = values
+
+    def get(self, name, default=None):
+        return self.values.get(name, default)
+
+    def set(self, name, value):
+        self.values[name] = value
+
+
 class Rotation(unittest.TestCase):
-    def test_start_moves_between_runs(self):
-        s = list("abcdefgh")
-        first, later = linkedin.rotated(s, now=0), linkedin.rotated(s, now=5 * 3600)
-        self.assertEqual(sorted(first), s)
-        self.assertNotEqual(first[0], later[0])
-        self.assertEqual(linkedin.rotated([], now=0), [])
+    searches = [{"term": t, "location": "Berlin"} for t in "ABCDE"]
+
+    def run_fetch(self, state, throttle_at=None):
+        throttle, calls = linkedin.Throttle(), []
+
+        def fake_scrape(**kw):
+            calls.append(kw["search_term"])
+            if len(calls) == throttle_at:
+                throttle.hit = True
+            return pd.DataFrame([])
+        cfg = {"searches": self.searches, "_problems": [], "_state": state}
+        with mock.patch.object(linkedin.time, "sleep"), mock.patch.object(linkedin, "say"), \
+                mock.patch.object(linkedin, "note"):
+            linkedin._fetch(cfg, datetime.now(timezone.utc) - timedelta(days=1),
+                            fake_scrape, lambda level: None, None, None, throttle)
+        return calls
+
+    def test_starts_at_saved_search(self):
+        s = self.searches
+        self.assertEqual([x["term"] for x in linkedin.rotated(s, linkedin.search_key(s[2]))], list("CDEAB"))
+        self.assertEqual(linkedin.rotated(s, None), s)
+        self.assertEqual(linkedin.rotated(s, "gone|Berlin|"), s)   # search removed from the config
+        self.assertEqual(linkedin.rotated([], None), [])
+
+    def test_key_tells_places_apart(self):
+        self.assertNotEqual(linkedin.search_key({"term": "A", "location": "Germany"}),
+                            linkedin.search_key({"term": "A", "location": "Germany", "remote": True}))
+
+    def test_throttled_run_continues_with_the_interrupted_search(self):
+        state = State()
+        self.assertEqual(self.run_fetch(state, throttle_at=2), ["A", "B"])
+        self.assertEqual(self.run_fetch(state, throttle_at=1), ["B"])
+        self.assertEqual(self.run_fetch(state), list("BCDEA"))
+
+    def test_complete_run_moves_the_start_on(self):
+        state = State()
+        self.assertEqual(self.run_fetch(state), list("ABCDE"))
+        self.assertEqual(self.run_fetch(state), list("BCDEA"))
+
+    def test_throttled_in_last_search(self):
+        state = State(**{linkedin.STATE_KEY: linkedin.search_key(self.searches[3])})
+        self.assertEqual(self.run_fetch(state, throttle_at=5), list("DEABC"))
+        self.assertEqual(state.get(linkedin.STATE_KEY), linkedin.search_key(self.searches[2]))
+
+    def test_without_state(self):
+        self.assertEqual(self.run_fetch(None), list("ABCDE"))
 
 
 class StopsWhenThrottled(unittest.TestCase):
@@ -81,7 +132,7 @@ class StopsWhenThrottled(unittest.TestCase):
         cfg = {"searches": [{"term": t, "location": "Berlin"} for t in "ABCDE"], "_problems": []}
         since = datetime.now(timezone.utc) - timedelta(days=1)
         with mock.patch.object(linkedin.time, "sleep"), mock.patch.object(linkedin, "say"), \
-                mock.patch.object(linkedin, "note"), mock.patch.object(linkedin, "rotated", lambda s: s):
+                mock.patch.object(linkedin, "note"), mock.patch.object(linkedin, "rotated", lambda s, start=None: s):
             jobs = linkedin._fetch(cfg, since, fake_scrape, lambda level: None, None, None, throttle)
         self.assertEqual((calls, jobs), (["A", "B"], []))
         self.assertEqual(cfg["_problems"][0][0], "throttled")
@@ -102,7 +153,7 @@ class Pauses(unittest.TestCase):
         cfg = {"searches": [{"term": t, "location": "Berlin"} for t in "ABC"], "_problems": []}
         since = datetime.now(timezone.utc) - timedelta(days=1)
         with mock.patch.object(linkedin.time, "sleep") as sleep, mock.patch.object(linkedin, "say"), \
-                mock.patch.object(linkedin, "note"), mock.patch.object(linkedin, "rotated", lambda s: s):
+                mock.patch.object(linkedin, "note"), mock.patch.object(linkedin, "rotated", lambda s, start=None: s):
             linkedin._fetch(cfg, since, lambda **kw: pd.DataFrame([]), lambda level: None, None, None, throttle)
         waits = [c.args[0] for c in sleep.call_args_list]
         self.assertEqual(len(waits), 2)                          # between the 3 searches, not before the first
@@ -110,7 +161,7 @@ class Pauses(unittest.TestCase):
 
         cfg = dict(cfg, search_pause=[1, 2])
         with mock.patch.object(linkedin.time, "sleep") as sleep, mock.patch.object(linkedin, "say"), \
-                mock.patch.object(linkedin, "note"), mock.patch.object(linkedin, "rotated", lambda s: s):
+                mock.patch.object(linkedin, "note"), mock.patch.object(linkedin, "rotated", lambda s, start=None: s):
             linkedin._fetch(cfg, since, lambda **kw: pd.DataFrame([]), lambda level: None, None, None, throttle)
         self.assertTrue(all(1 <= c.args[0] <= 2 for c in sleep.call_args_list))
 
