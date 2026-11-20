@@ -4,6 +4,12 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.27.0 — #48 [feat][linkedin] A throttled run counts as the day's LinkedIn run
+- `runs_per_day` now counts throttled runs too: after LinkedIn answers 429, it isn't asked
+  again the same day (before, every later run tried again and was blocked at once).
+- The next day's run still starts with the interrupted search and looks back to the last
+  full run, so nothing in between is skipped.
+
 ## v0.26.2 — #47 [fix][search] Keep the order of search terms from the profile
 - Sources with their own search (Himalayas) searched the `ad_must_mention` words in
   alphabetical order (AKS, EKS, GKE, K8s, Kubernetes, OpenShift). They now run in the order

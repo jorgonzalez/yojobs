@@ -13,7 +13,7 @@ from yojobs.mailer import render
 from yojobs.store import Store
 
 
-class FullRunsToday(unittest.TestCase):
+class RunsToday(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.store = Store(Path(self.tmp.name) / "db.sqlite")
@@ -23,15 +23,18 @@ class FullRunsToday(unittest.TestCase):
         self.store.db.close()
         self.tmp.cleanup()
 
-    def test_counts_only_unthrottled_runs_of_today(self):
+    def test_counts_todays_runs_throttled_included(self):
         now = datetime.now(timezone.utc)
         self.h.record([SourceRun("linkedin", "ok", 300)], when=(now - timedelta(days=1)).isoformat())   # yesterday
-        self.assertEqual(self.h.full_runs_today("linkedin"), 0)
+        self.assertEqual(self.h.runs_today("linkedin"), 0)
+        self.h.record([SourceRun("linkedin", "ERROR", 0, error="offline")],
+                      when=(now - timedelta(minutes=40)).isoformat())                                  # error: no
+        self.assertEqual(self.h.runs_today("linkedin"), 0)
         self.h.record([SourceRun("linkedin", "ok", 0, parts_failed=[("throttled", "429")])],
                       when=(now - timedelta(minutes=30)).isoformat())                                  # throttled
-        self.assertEqual(self.h.full_runs_today("linkedin"), 0)
-        self.h.record([SourceRun("linkedin", "ok", 300)], when=now.isoformat())                        # full run
-        self.assertEqual(self.h.full_runs_today("linkedin"), 1)
+        self.assertEqual(self.h.runs_today("linkedin"), 1)
+        # the throttled run is not a full run: tomorrow's lookback still starts at yesterday's
+        self.assertLess(self.h.last_full_run("linkedin"), now - timedelta(hours=23))
 
 
 class SkipInRun(unittest.TestCase):
