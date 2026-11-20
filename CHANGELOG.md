@@ -4,6 +4,12 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.26.1 — #46 [fix][discovery] Ignore unused Pinpoint accounts with sample jobs
+- Unused Pinpoint accounts answer with the same sample jobs ("Head of DEI – Belfast",
+  "Head of DEI – US", "Marketing Manager", …); `beam` and `hellobetter` looked like those
+  companies' boards. Board discovery no longer suggests a Pinpoint board whose jobs are
+  only these samples.
+
 ## v0.26.0 — #45 [feat][companies] Read Pinpoint job boards
 - New hiring system for `companies.yaml`: `pinpoint: [<id> or career domain]`, read from
   Pinpoint's public `postings.json` (title, location, work mode, full ad text). E.g.

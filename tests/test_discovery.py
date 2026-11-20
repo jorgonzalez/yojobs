@@ -104,6 +104,19 @@ class Run(unittest.TestCase):
         text = weekly.build(self.h, {}, discoveries=found)[1]
         self.assertIn("greenhouse: distribusion", text)
 
+class PinpointSampleBoards(unittest.TestCase):
+    def test_sample_jobs_are_not_a_board(self):
+        import json
+        sample = {"data": [{"title": t} for t in ("Head of DEI - Belfast", "Head of DEI - US", "Head of DEI - UK",
+                                                   "Marketing Manager", "Customer Service Rep")]}
+        real = {"data": [{"title": "Infrastructure Lead "}, {"title": "Marketing Manager"}]}
+        with mock.patch.object(discovery, "_get", return_value=json.dumps(sample).encode()):
+            self.assertIsNone(discovery._pinpoint("beam"))
+        with mock.patch.object(discovery, "_get", return_value=json.dumps(real).encode()):
+            self.assertEqual(discovery._pinpoint("adm"), "")
+        with mock.patch.object(discovery, "_get", return_value=None):
+            self.assertIsNone(discovery._pinpoint("nobody"))
+
 
 if __name__ == "__main__":
     unittest.main()
