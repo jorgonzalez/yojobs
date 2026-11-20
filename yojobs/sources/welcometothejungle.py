@@ -62,9 +62,9 @@ def _job(loc: str, lastmod: str):
         location=_words(city_slug),
         published=parse_iso(lastmod),  # last update of the listing, not first posting
         has_description=False,
-        # Work mode unknown without opening the (bot-protected) job page: treat as
-        # on-site, so only jobs in onsite_cities (Berlin) pass. Never "remote", or an
-        # unparsed location would let e.g. a San Francisco job through.
+        # Work mode unknown from the sitemap: treat as on-site, so only jobs in
+        # onsite_cities (Berlin) pass. Never "remote", or an unparsed location would let
+        # e.g. a San Francisco job through. (enrich.py adds the ad text for fitting titles.)
         remote=False,
     )
 

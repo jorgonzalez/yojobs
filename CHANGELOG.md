@@ -4,6 +4,18 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.25.0 — #43 [feat][enrich] Open the ad for jobs from title-only sources
+- Welcome to the Jungle, StartupMap and 4dayweek list jobs without the ad text, and 4dayweek
+  without a location: its empty location counted as "remote, no restriction", so Sainsbury's
+  "Engineering Manager – PaaS Cloud" (hybrid, London) was emailed. For jobs whose title fits
+  (and that aren't known yet), yojobs now opens the ad once (`yojobs/enrich.py`) and fills
+  in what's missing: Greenhouse / Lever / Ashby links through their APIs, 4dayweek pages
+  from their embedded job data (location, work mode, text), other pages from their
+  schema.org JobPosting (Welcome to the Jungle, company sites).
+- So the Kubernetes check, the work-mode hint and the CV match see the real ad. A source's
+  own location / work mode is kept; only empty fields are filled.
+- At most 10 ads per run, 2–4 s apart; a site answering 403/429 isn't asked again that run;
+  a failed lookup leaves the job as before ("not verified").
 ## v0.24.1 — #42 [fix][dedupe] Ignore "in <place>" at the end of job titles
 - Knime's "Team Lead - Site Reliability Engineering (m/f/d) in Berlin or Konstanz" (LinkedIn,
   17 Nov) came again from Welcome to the Jungle as "Team Lead Site Reliability Engineering":
