@@ -24,6 +24,7 @@ import random
 import time
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
+from typing import Optional
 
 from ..models import Job, strip_html, to_utc
 from ..progress import is_verbose, note, say
@@ -115,6 +116,9 @@ def pause_range(value, default):
 
 
 STATE_KEY = "linkedin_next_search"   # meta table: the search the next run starts with
+DONE_KEY = "linkedin_done:"           # + search_key: when that search last ran completely (UTC ISO)
+MARGIN = timedelta(hours=2)           # lookback overlap, so nothing falls between two runs
+MAX_LOOKBACK_DAYS = 7                 # a search not done for longer looks back this far at most
 
 
 def search_key(s: dict) -> str:
@@ -131,13 +135,30 @@ def rotated(searches: list, start: str = None) -> list:
 
 
 def next_start(searches: list, done: int, throttled: bool) -> str:
-    """The search the next run starts with. Throttled: the one LinkedIn stopped (it may be
-    incomplete), so it's repeated. Complete: the next in line, so the first place moves on."""
+    """The search the next run starts with (`searches` in this run's rotated order, all of
+    them). Throttled: the one LinkedIn stopped (it may be incomplete), so it's repeated.
+    Only some done (searches_per_run): the next one not done. All done: the next in line,
+    so the first place moves on."""
     if not searches:
         return ""
     if throttled:
         return search_key(searches[max(done - 1, 0)])
-    return search_key(searches[1 % len(searches)])
+    return search_key(searches[done if 0 < done < len(searches) else 1 % len(searches)])
+
+
+def search_since(s: dict, state, since: datetime, last_full_run: Optional[datetime], now: datetime) -> datetime:
+    """How far back this search looks: since it last ran completely (- margin), so a search
+    that runs every few days (searches_per_run) covers those days, at most MAX_LOOKBACK_DAYS.
+    Never done: since LinkedIn's last full run when that's more recent than the general window."""
+    done = state.get(DONE_KEY + search_key(s)) if state else None
+    if done:
+        try:
+            return max(datetime.fromisoformat(done) - MARGIN, now - timedelta(days=MAX_LOOKBACK_DAYS))
+        except ValueError:
+            pass
+    if last_full_run and last_full_run - MARGIN > since:
+        return last_full_run - MARGIN
+    return since
 
 
 def fetch(cfg, since):
@@ -160,13 +181,10 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
 
     # jobdrop warnings would break the one-line status display in quiet mode
     set_logger_level(logging.WARNING if is_verbose() else logging.ERROR)
-    # Look back only since LinkedIn's last full run (+2 h margin) when that's more recent
-    # than the general window: fewer old results, fewer pages. After a missed day it
-    # automatically looks back further (never more than the general window).
+    # Each search looks back only since it last ran completely (see search_since): fewer old
+    # results, fewer pages, and with searches_per_run the days between its turns are covered.
     last = cfg.get("_last_full_run")
-    if last and last - timedelta(hours=2) > since:
-        since = last - timedelta(hours=2)
-    hours_old = max(1, int((datetime.now(timezone.utc) - since).total_seconds() // 3600) + 1)
+    now = datetime.now(timezone.utc)
     title_ok = cfg.get("_title_ok") or (lambda job: True)
     search_pause = pause_range(cfg.get("search_pause"), SEARCH_PAUSE)
     page_pause = pause_range(cfg.get("page_pause"), PAGE_PAUSE)
@@ -174,12 +192,18 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
     jobs = {}
     state = cfg.get("_state")  # History (meta table): get(name) / set(name, value)
     searches = rotated(cfg.get("searches") or [], state.get(STATE_KEY) if state else None)
+    # searches_per_run: only the next N searches in line each run (LinkedIn throttles)
+    per_run = int(cfg.get("searches_per_run") or 0)
+    todo = searches[:per_run] if per_run > 0 else searches
+    if len(todo) < len(searches):
+        say(f"    linkedin: {len(todo)} of {len(searches)} searches this run (searches_per_run: {per_run})")
     done = 0
-    for i, s in enumerate(searches):
+    window = None   # the earliest date asked for: jobs since then are "recent" for this run
+    for i, s in enumerate(todo):
         if throttle.hit:
-            msg = (f"LinkedIn said 'too many requests' (429) after {i}/{len(searches)} searches; "
-                   f"skipped the other {len(searches) - i} this run (the next run starts with "
-                   f"\"{searches[i - 1]['term']}\", which LinkedIn interrupted)")
+            msg = (f"LinkedIn said 'too many requests' (429) after {i}/{len(todo)} searches; "
+                   f"skipped the other {len(todo) - i} this run (the next run starts with "
+                   f"\"{todo[i - 1]['term']}\", which LinkedIn interrupted)")
             note(f"linkedin: {msg}")
             if problems is not None:
                 problems.append(("throttled", msg))
@@ -187,9 +211,13 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
         if i:
             time.sleep(random.uniform(*search_pause))
         where = f"{s.get('location') or 'anywhere'}{' (remote)' if s.get('remote') else ''}"
-        say(f"    linkedin search {i + 1}/{len(searches)}: \"{s['term']}\" in {where}")
+        s_since = search_since(s, state, since, last, now)
+        window = min(window or s_since, s_since)
+        hours_old = max(1, int((now - s_since).total_seconds() // 3600) + 1)
+        say(f"    linkedin search {i + 1}/{len(todo)}: \"{s['term']}\" in {where} (last {hours_old} h)")
         remote = bool(s.get("remote"))
         done = i + 1
+        started = datetime.now(timezone.utc)
         df = scrape_jobs(
             site_name="linkedin",
             search_term=s["term"],
@@ -199,7 +227,14 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
             results_wanted=cfg.get("results_per_search", 50),
             linkedin_fetch_description=False,
         )
-        for row in df.to_dict("records"):
+        rows = df.to_dict("records")
+        if throttle.hit:
+            say(f"      {len(rows)} jobs before LinkedIn said 429")
+        else:
+            say(f"      {len(rows)} jobs")
+            if state:
+                state.set(DONE_KEY + search_key(s), started.isoformat(timespec="seconds"))
+        for row in rows:
             url = _str(row.get("job_url"))
             if not url or url in jobs:
                 continue
@@ -223,6 +258,8 @@ def _fetch(cfg, since, scrape_jobs, set_logger_level, LinkedIn, DescriptionForma
 
     if state and searches:
         state.set(STATE_KEY, next_start(searches, done, throttle.hit))
+    if window is not None:
+        cfg["_window_start"] = window   # a search may look back further than the run's window
 
     # Only fetch descriptions for jobs that already pass title + location rules.
     known = cfg.get("_known") or (lambda job: False)

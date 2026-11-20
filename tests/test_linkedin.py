@@ -120,6 +120,64 @@ class Rotation(unittest.TestCase):
         self.assertEqual(self.run_fetch(None), list("ABCDE"))
 
 
+class SearchesPerRun(unittest.TestCase):
+    searches = [{"term": t, "location": "Berlin"} for t in "ABCDEF"]
+
+    def run_fetch(self, state, throttle_at=None, hours=None):
+        throttle, calls = linkedin.Throttle(), []
+
+        def fake_scrape(**kw):
+            calls.append(kw["search_term"])
+            if hours is not None:
+                hours.append(kw["hours_old"])
+            if len(calls) == throttle_at:
+                throttle.hit = True
+            return pd.DataFrame([])
+        cfg = {"searches": self.searches, "searches_per_run": 2, "_problems": [], "_state": state}
+        with mock.patch.object(linkedin.time, "sleep"), mock.patch.object(linkedin, "say"), \
+                mock.patch.object(linkedin, "note"):
+            linkedin._fetch(cfg, datetime.now(timezone.utc) - timedelta(days=3),
+                            fake_scrape, lambda level: None, None, None, throttle)
+        return calls, cfg
+
+    def test_two_a_run_in_turn(self):
+        state = State()
+        self.assertEqual([self.run_fetch(state)[0] for _ in range(4)],
+                         [["A", "B"], ["C", "D"], ["E", "F"], ["A", "B"]])
+
+    def test_throttled_pair_is_repeated_from_the_interrupted_search(self):
+        state = State()
+        self.assertEqual(self.run_fetch(state, throttle_at=2)[0], ["A", "B"])
+        self.assertEqual(self.run_fetch(state)[0], ["B", "C"])
+        self.assertEqual(self.run_fetch(state)[0], ["D", "E"])
+
+    def test_each_search_looks_back_to_its_last_complete_run(self):
+        state, hours = State(), []
+        self.run_fetch(state, hours=hours)                       # A, B never done: general 3 days
+        self.assertEqual(hours, [73, 73])
+        self.assertIn(linkedin.DONE_KEY + linkedin.search_key(self.searches[0]), state.values)
+        four_days = (datetime.now(timezone.utc) - timedelta(days=4)).isoformat()
+        long_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        state.values.update({linkedin.DONE_KEY + linkedin.search_key(self.searches[2]): four_days,
+                             linkedin.DONE_KEY + linkedin.search_key(self.searches[3]): long_ago})
+        hours.clear()
+        _, cfg = self.run_fetch(state, hours=hours)              # C: 4 days + margin; D: capped at 7 days
+        self.assertEqual(hours, [99, 169])
+        self.assertLess(cfg["_window_start"], datetime.now(timezone.utc) - timedelta(days=6))
+
+    def test_throttled_search_is_not_marked_done(self):
+        state = State()
+        self.run_fetch(state, throttle_at=2)
+        self.assertIn(linkedin.DONE_KEY + linkedin.search_key(self.searches[0]), state.values)
+        self.assertNotIn(linkedin.DONE_KEY + linkedin.search_key(self.searches[1]), state.values)
+
+    def test_next_start(self):
+        s = self.searches
+        self.assertEqual(linkedin.next_start(s, 2, False), linkedin.search_key(s[2]))
+        self.assertEqual(linkedin.next_start(s, 6, False), linkedin.search_key(s[1]))   # all done: move on by one
+        self.assertEqual(linkedin.next_start(s, 2, True), linkedin.search_key(s[1]))
+
+
 class StopsWhenThrottled(unittest.TestCase):
     def test_remaining_searches_are_skipped_and_reported(self):
         throttle, calls = linkedin.Throttle(), []

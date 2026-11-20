@@ -279,7 +279,9 @@ def run(args, cfg: dict, store: Store, days: float):
             source_runs.append(SourceRun(name, "ERROR", seconds=time.time() - t0, error=f"{type(exc).__name__}: {exc}"[:300]))
             note(f"[{i}/{len(selected)}] {name}: ERROR {type(exc).__name__}: {exc}")
             continue
-        recent = [j for j in jobs if j.published is None or j.published >= since]
+        # a source may have asked for more than the run's window (LinkedIn: per-search lookback)
+        start = min(since, scfg.get("_window_start") or since)
+        recent = [j for j in jobs if j.published is None or j.published >= start]
         if blocked:
             recent = [j for j in recent if _company_key(j.company) not in blocked]
         if not args.all:

@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.28.0 — #49 [feat][linkedin] Fewer LinkedIn searches per run, each with its own lookback
+- `searches_per_run: N` (LinkedIn, `sources.yaml`): each run does only the next N searches
+  in the saved rotation, so the searches are spread over several days.
+- Each search looks back to when it last ran completely (+2 h margin, at most 7 days)
+  instead of to LinkedIn's last full run; a search interrupted by a 429 isn't marked done.
+- The run keeps jobs from that longer lookback (a source can widen the run's date window).
+- The log shows each search's lookback (hours) and how many jobs it returned.
+
 ## v0.27.0 — #48 [feat][linkedin] A throttled run counts as the day's LinkedIn run
 - `runs_per_day` now counts throttled runs too: after LinkedIn answers 429, it isn't asked
   again the same day (before, every later run tried again and was blocked at once).
