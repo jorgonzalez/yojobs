@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.26.0 — #45 [feat][companies] Read Pinpoint job boards
+- New hiring system for `companies.yaml`: `pinpoint: [<id> or career domain]`, read from
+  Pinpoint's public `postings.json` (title, location, work mode, full ad text). E.g.
+  adm-Indicia's "Infrastructure Lead – Europe" (fully remote) on careers.admgroup.com.
+- The feed has no posting date or company name: new jobs are told apart by the seen list,
+  and the company name comes from the domain ("Admgroup").
+- Board discovery also tries `<id>.pinpointhq.com`.
+
 ## v0.25.1 — #44 [docs][config] Explain that short title words cover longer ones
 - `config.example/profile.yaml`: words match anywhere in the title, so "Manager" already
   covers "Engineering Manager" and "Lead" covers "Team Lead" / "Tech Lead"; listing both
