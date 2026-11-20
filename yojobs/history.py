@@ -134,7 +134,7 @@ class History:
     def runs_today(self, source: str, now: Optional[datetime] = None) -> int:
         """How many times the source ran today (local date), throttled runs included: a site
         that throttled us shouldn't be asked again the same day. (The next day's run still
-        looks back to the last full run, see last_full_run.)"""
+        looks back far enough: LinkedIn's searches each look back to their own last complete run.)"""
         now = now or datetime.now()
         rows = self.db.execute("SELECT run_at FROM source_runs WHERE source = ? AND status = 'ok' AND run_at >= ?",
                                (source, (datetime.now(timezone.utc) - timedelta(days=2)).isoformat())).fetchall()

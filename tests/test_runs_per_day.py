@@ -58,6 +58,24 @@ class SkipInRun(unittest.TestCase):
             self.assertEqual(self.run_once(store), 0)          # second: skipped
             self.assertEqual(self.run_once(store, ["linkedin"]), 1)   # --source linkedin: always runs
 
+    def test_source_window_keeps_older_jobs(self):
+        from yojobs.models import Job
+        old = datetime.now(timezone.utc) - timedelta(days=5)
+
+        def fake(cfg, since):
+            cfg["_window_start"] = old - timedelta(hours=1)    # e.g. a LinkedIn search's own lookback
+            return [Job(source="linkedin", title="EM", company="A", url="https://x/1", published=old)]
+        cfg = {"sources": {"linkedin": {}}, "profiles": [], "weekly": {}}
+        args = SimpleNamespace(source=None, all=True, email=True)       # email: runs are recorded
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(m.SOURCES, {"linkedin": fake}, clear=True), \
+                mock.patch.object(m.mailer, "send"), \
+                redirect_stdout(io.StringIO()), mock.patch("sys.stderr", io.StringIO()):
+            store = Store(Path(d) / "db.sqlite")
+            m.run(args, cfg, store, 3)
+            fetched, recent = store.db.execute("SELECT fetched, recent FROM source_runs").fetchone()
+            store.db.close()
+        self.assertEqual((fetched, recent), (1, 1))
+
     def test_skip_is_not_a_source_problem_in_the_email(self):
         text, html = render([], [("linkedin", "skip", "already ran 1x today (runs_per_day)")])
         self.assertNotIn("Source problems", text)

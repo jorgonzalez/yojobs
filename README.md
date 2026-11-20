@@ -304,7 +304,12 @@ so "emailed 0 new of 2 matches" explains itself:
 Any source can be limited to its first N runs a day with `runs_per_day` in
 `config/sources.yaml` (the example sets LinkedIn to 1, since it throttles heavy use); a
 throttled run counts too (no second try the same day; the next day continues where it
-stopped and looks back to the last full run), and `--source <name>` always runs it.
+stopped and looks back far enough, see below), and `--source <name>` always runs it.
+
+LinkedIn can also do only part of its searches per run: `searches_per_run: 2` runs the
+next 2 in line (the saved rotation continues where the last run stopped). Each search
+looks back to its own last complete run (+2 h, at most 7 days), so a search that runs
+every third day still covers all three days.
 
 LinkedIn and Indeed remote flags are unreliable, so outside your on-site cities a job
 from them only counts as remote if its location/title/description clearly says so

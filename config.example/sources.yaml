@@ -31,6 +31,9 @@ sources:
   # heavy use, so once a day:
   linkedin: {enabled: true, results_per_search: 50, runs_per_day: 1}
   # optional: search_pause: [20, 40], page_pause: [8, 15]  (seconds; LinkedIn reacts to bursts)
+  # optional: searches_per_run: 2  -> only the next 2 LinkedIn searches in line each run; each
+  #   search looks back to when it last ran (at most 7 days), so with 6 searches and one run
+  #   a day every search runs every 3 days and covers those 3 days
   indeed: {enabled: true, country: Germany, results_per_search: 50}   # one Indeed country site
   # StepStone: search pages for the searches.yaml terms in cities only (no remote searches allowed);
   # job pages aren't opened, so ad_must_mention is checked on the ~500-character excerpt
