@@ -4,6 +4,12 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.26.2 — #47 [fix][search] Keep the order of search terms from the profile
+- Sources with their own search (Himalayas) searched the `ad_must_mention` words in
+  alphabetical order (AKS, EKS, GKE, K8s, Kubernetes, OpenShift). They now run in the order
+  written in `profile.yaml`, so the preferred terms come first and still run if the site
+  starts throttling later in the run.
+
 ## v0.26.1 — #46 [fix][discovery] Ignore unused Pinpoint accounts with sample jobs
 - Unused Pinpoint accounts answer with the same sample jobs ("Head of DEI – Belfast",
   "Head of DEI – US", "Marketing Manager", …); `beam` and `hellobetter` looked like those

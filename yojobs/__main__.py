@@ -220,6 +220,16 @@ def match_report(outcomes, emailed: bool = True) -> list[str]:
     return lines
 
 
+def search_terms(profiles) -> list[str]:
+    """Search terms for sources with server-side search (e.g. himalayas): a profile's
+    all_of words if it has any (every match must contain them), else its any_of words.
+    In the order written in the profile (the first ones run first, so they still run when
+    a site starts throttling later in the run); duplicates dropped."""
+    terms = (alt.strip() for p in profiles for k in (p.get("all_of") or p.get("any_of") or [])
+             for alt in k.split("|"))
+    return list(dict.fromkeys(t for t in terms if t))
+
+
 def run(args, cfg: dict, store: Store, days: float):
     """One full pass. Returns (exit code, ok) where ok means the run did its job."""
     since = datetime.now(timezone.utc) - timedelta(days=days)
@@ -236,11 +246,7 @@ def run(args, cfg: dict, store: Store, days: float):
         if name not in SOURCES:
             note(f"Unknown source in config: {name}")
             continue
-        # sources with server-side search (e.g. himalayas) get search terms: a profile's
-        # all_of words if it has any (every match must contain them), else its any_of words
-        terms = {alt.strip() for p in profiles for k in (p.get("all_of") or p.get("any_of") or [])
-                 for alt in k.split("|")}
-        scfg = dict(scfg, _keywords=sorted(terms),
+        scfg = dict(scfg, _keywords=search_terms(profiles),
                     _title_ok=lambda job: any(jobfilter.title_ok(job, p) for p in profiles),
                     # already emailed or already a near miss: sources can skip extra requests for it
                     _known=lambda job: store.is_seen(job) or history_now.known_near_miss(job.url),
