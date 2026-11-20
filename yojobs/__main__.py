@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from . import filter as jobfilter
-from . import __version__, logs, mailer, matching, weekly, workmode
+from . import __version__, enrich, logs, mailer, matching, weekly, workmode
 from .history import History, SourceRun
 from . import progress
 from .progress import note, say, step
@@ -254,6 +254,7 @@ def run(args, cfg: dict, store: Store, days: float):
     # companies you never want to hear from (applied already, not interested...)
     blocked = {_company_key(c) for c in cfg.get("blocked_companies") or [] if str(c).strip()}
     say(f"Checking {len(selected)} sources for jobs from the last {days:.3g} days")
+    details = enrich.Enricher()  # ads opened for sources that only give a title (limit per run)
     for i, (name, scfg) in enumerate(selected.items(), 1):
         t0 = time.time()
         scfg["_problems"] = []  # parts of a source that failed (e.g. one company board)
@@ -275,6 +276,10 @@ def run(args, cfg: dict, store: Store, days: float):
         recent = [j for j in jobs if j.published is None or j.published >= since]
         if blocked:
             recent = [j for j in recent if _company_key(j.company) not in blocked]
+        if not args.all:
+            # sources without ad text / location: open the ad for jobs whose title fits
+            enrich.enrich_jobs(recent, lambda j, known=scfg["_known"]: (
+                any(jobfilter.title_ok(j, p) for p in profiles) and not known(j)), details)
         if args.all:
             kept = recent
         else:

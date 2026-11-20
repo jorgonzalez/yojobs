@@ -152,8 +152,13 @@ To never hear from some companies (already applied, not interested), list them u
 ignored, so `GetYourGuide` also blocks "Get Your Guide GmbH". Blocked jobs are never
 emailed and never listed as near misses.
 
-Sources without job descriptions (marked below) can't check `ad_must_mention`: their jobs are
-kept and marked "<word> not verified" in the email.
+Sources without job descriptions (marked below) list only titles. For jobs whose title fits,
+yojobs opens the ad once to fill in the text, and the location / work mode when the source
+has none: through the Greenhouse, Lever or Ashby API when the link points there, from the
+data embedded in 4dayweek's job pages, or from the page's schema.org JobPosting (Welcome to
+the Jungle, many company sites). At most 10 ads per run, with pauses; a site answering
+403/429 isn't asked again that run. When the ad can't be read, the job is kept and marked
+"<word> not verified" in the email.
 
 On-site / hybrid jobs get a work-mode hint next to the location, e.g.
 `Berlin (hybrid · 2-3 office days/week)`. It comes from the job board when it states
@@ -284,11 +289,11 @@ so "emailed 0 new of 2 matches" explains itself:
 | jobspresso | WP Job Manager feed | only the newest 10 per run (robots.txt disallows feed URLs with `?`) |
 | hackernews | HN Search API | monthly "Who is hiring?" threads (latest 2); first line `Company \| Role \| Location \| REMOTE (EU)` parsed |
 | landingjobs | JSON API | EU tech, many on-site/hybrid |
-| 4dayweek | RSS | titles only, no descriptions |
-| startupmap | JSON | ~16k EU startup jobs in one request; no descriptions |
+| 4dayweek | RSS | titles only; ad text, location and work mode from the job page |
+| startupmap | JSON | ~16k EU startup jobs in one request; ad text from the linked ad |
 | arbeitnow | JSON API | jobs in Germany (many Berlin, ~1/3 in German); 300 per page, ~20 s for 30 days |
 | berlinstartupjobs | RSS | teaser only; full page fetched for title matches |
-| welcometothejungle | sitemaps | job pages are bot-protected, so sitemap URLs only: Berlin jobs, no descriptions |
+| welcometothejungle | sitemaps | sitemap URLs: Berlin jobs; ad text from the job page for fitting titles |
 | companies | Greenhouse / Lever / Ashby / Personio / Recruitee / Teamtailor | company career pages, listed in `config/companies.yaml`; ~2 min for 137 companies |
 | remoterocketship | job sitemaps | English sitemaps; jobs open to Germany/Europe/EMEA/worldwide; job page only for new candidates |
 | remotecom | search pages | remote.com/jobs: `only: [remotecom]` terms; where they hire, work mode, salary; full ad for candidates |
