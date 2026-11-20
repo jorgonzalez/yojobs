@@ -75,6 +75,9 @@ def norm_title(title: str) -> str:
     parts = re.split(r"\s+[-–—|@]\s+|,\s+|:\s+", t)
     while len(parts) > 1 and _is_place(parts[-1]):
         parts.pop()
+    # drop a trailing "in <place> ..." clause: "SRE Team Lead in Berlin or Konstanz" (the first
+    # word after "in" must be a place, so "Engineer in Cloud Security" stays)
+    parts[-1] = re.sub(r"\s+in\s+(.+)$", lambda m: "" if _PLACE_RE.match(m.group(1)) else m.group(0), parts[-1])
     t = " ".join(parts).lower().replace("&", " and ")
     words = [_ABBREV.get(w, w) for w in _NON_ALNUM.sub(" ", t).split()]
     words = [w for w in words if w not in ("remote",)]

@@ -34,6 +34,8 @@ class Normalization(unittest.TestCase):
             "Senior DevOps Engineer, Remote - Europe",
             "Senior DevOps Engineer (100% Remote)",
             "SENIOR DEVOPS ENGINEER",
+            "Senior DevOps Engineer in Berlin",
+            "Senior DevOps Engineer (m/f/d) in Berlin or Konstanz",
         ]:
             self.assertEqual(norm_title(t), base, t)
 
@@ -42,6 +44,9 @@ class Normalization(unittest.TestCase):
         self.assertNotEqual(norm_title("Engineering Manager, Platform"), norm_title("Engineering Manager"))
         self.assertNotEqual(norm_title("Senior SRE"), norm_title("Junior SRE"))
         self.assertNotEqual(norm_title("DevOps Engineer (Kubernetes)"), norm_title("DevOps Engineer"))
+        self.assertNotEqual(norm_title("Engineer in Cloud Security"), norm_title("Engineer"))
+        self.assertEqual(norm_title("Team Lead - Site Reliability Engineering (m/f/d) in Berlin or Konstanz"),
+                         norm_title("Team Lead Site Reliability Engineering"))   # Knime, LinkedIn vs WTTJ
 
 
 class Dedupe(unittest.TestCase):
@@ -117,7 +122,9 @@ class SimilarTitles(unittest.TestCase):
         same = [("Hands-on Engineering Manager, Infrastructure", "Hands-on Engineering Manager DevOps (GCP/Kubernetes)"),
                 ("Engineering Manager Platform And It Compliance", "Engineering Manager - Platform and IT & Compliance"),
                 ("Senior Engineering Manager, Platform", "Engineering Manager Platform (m/w/d)"),
-                ("Head of Platform (Infrastructure & DevOps)", "Head of Platform – Infrastructure, DevOps")]
+                ("Head of Platform (Infrastructure & DevOps)", "Head of Platform – Infrastructure, DevOps"),
+                ("Team Lead - Site Reliability Engineering (m/f/d) in Berlin or Konstanz",
+                 "Team Lead Site Reliability Engineering")]
         different = [("Engineering Manager Banking Platform", "Engineering Manager Ai Engineering Ai Platform"),
                      ("Engineering Manager Platform", "Engineering Manager Data"),
                      ("Head of Platform", "Head of Infrastructure"),

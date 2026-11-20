@@ -4,6 +4,13 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.24.1 — #42 [fix][dedupe] Ignore "in <place>" at the end of job titles
+- Knime's "Team Lead - Site Reliability Engineering (m/f/d) in Berlin or Konstanz" (LinkedIn,
+  17 Nov) came again from Welcome to the Jungle as "Team Lead Site Reliability Engineering":
+  the trailing "in Berlin or Konstanz" made the titles too different (5 of 9 words). A
+  trailing "in …" clause is now dropped when the word after "in" is a place (Berlin, Germany,
+  Remote, …); "Engineer in Cloud Security" stays as it is.
+
 ## v0.24.0 — #41 [feat][linkedin] Continue searches where the last run stopped
 - LinkedIn's search order used to rotate with the clock (one step every 4 hours), so after a
   429 the next run didn't really start with the skipped searches. Now the next start is saved
