@@ -49,6 +49,11 @@ def search_labels(sources_cfg: dict) -> dict:
             if label not in labels:
                 labels.append(label)
         out[source] = labels
+    # the stapply dataset: one "search" per slice (found_by = the slice)
+    st = sources_cfg.get("stapply") or {}
+    if "stapply" in sources_cfg and st.get("enabled", True):
+        from .sources.stapply import DEFAULT_SLICES
+        out["stapply"] = list(st.get("slices") or DEFAULT_SLICES)
     return out
 
 
