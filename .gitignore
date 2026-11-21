@@ -3,6 +3,7 @@
 *.sqlite
 .DS_Store
 .env
+.duckdb/
 .tmp/
 .venv/
 __pycache__/

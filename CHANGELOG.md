@@ -4,6 +4,13 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.29.0 — #50 [feat][sources] Optional Stapply job dataset source (off by default)
+- New source `stapply`: Stapply's open daily job dataset, read with DuckDB (optional
+  dependency) from Parquet over HTTP; each slice's daily snapshot read once, jobs in Germany
+  or remote since the last read, ad text only for fitting titles; multi-city ads keep all
+  offices. Off in the example config (`runs_per_day: 1`).
+- The weekly Searches table lists each Stapply slice, to judge whether it's worth keeping.
+
 ## v0.28.0 — #49 [feat][linkedin] Fewer LinkedIn searches per run, each with its own lookback
 - `searches_per_run: N` (LinkedIn, `sources.yaml`): each run does only the next N searches
   in the saved rotation, so the searches are spread over several days.
