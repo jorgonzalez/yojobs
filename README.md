@@ -300,6 +300,7 @@ so "emailed 0 new of 2 matches" explains itself:
 | stepstone | search pages | `searches.yaml` terms in cities (no remote searches); excerpt + skills only, job pages not opened; ~1 min |
 | linkedin | jobdrop | searches in config; descriptions fetched only for title/location matches; 20–40 s between searches and 8–15 s between job pages (`search_pause`, `page_pause`); ~15–20 min |
 | indeed | jobdrop | one Indeed country per config; descriptions included; fast |
+| stapply | Parquet dataset | **optional, off by default**: [Stapply's open job dataset](https://storage.stapply.ai/jobs/v1/manifest.json) (MIT, refreshed daily); needs `.venv/bin/pip install duckdb`; see below |
 
 Any source can be limited to its first N runs a day with `runs_per_day` in
 `config/sources.yaml` (the example sets LinkedIn to 1, since it throttles heavy use); a
@@ -314,6 +315,16 @@ every third day still covers all three days.
 LinkedIn and Indeed remote flags are unreliable, so outside your on-site cities a job
 from them only counts as remote if its location/title/description clearly says so
 (`yojobs/remote.py`); jobs remote only per description are marked "check".
+
+Stapply (experimental) reads the daily job dataset Stapply collects from ~90 hiring
+systems and job boards. DuckDB reads only the needed columns of each slice's Parquet file
+(a few seconds per slice; its HTTP extension is kept in `.duckdb/` in the project). Each
+daily snapshot of a slice is read once: light columns of jobs in Germany or remote posted
+since the last read, then the ad text only for jobs whose title and place fit. The default
+`slices` are bamboohr, smartrecruiters, workable, workday, join_com and eures, leaving out
+the systems yojobs already reads directly (Greenhouse, Lever, Ashby, Personio...). Its jobs record the slice as the search, so the weekly
+Searches table shows what each slice brought; in a 30-day trial it found about one extra
+match, so treat it as a trial and switch it off if the table stays at 0/0.
 
 Not supported: sites that block automated access (e.g. hiring.cafe, Wellfound).
 

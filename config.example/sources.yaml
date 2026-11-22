@@ -44,3 +44,12 @@ sources:
   # Remote Rocketship: its English job sitemaps (3 requests); jobs open to Germany, Berlin, Europe,
   # EMEA or worldwide; job pages only for new candidates
   remoterocketship: {enabled: true, delay_seconds: 4}
+
+  # Experimental, off by default: Stapply's open job dataset (~90 hiring systems, refreshed
+  # daily, MIT). Needs DuckDB: .venv/bin/pip install duckdb. Keep it last, so a job also found
+  # directly counts for the direct source. Once a day: a run that finds the day's snapshot
+  # already read returns 0 jobs, and repeated 0s would look like a broken source.
+  # The weekly Searches table lists each slice (0/0 for weeks = not worth keeping).
+  # Default slices: bamboohr, smartrecruiters, workable, workday, join_com, eures
+  stapply: {enabled: false, runs_per_day: 1}
+  # optional: slices: [bamboohr, workable]   (names: by_ats in the manifest)
