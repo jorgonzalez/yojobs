@@ -18,6 +18,7 @@ from datetime import datetime
 from typing import List, Tuple
 
 from .history import History
+from .store import norm_company, similar_titles
 from .mailer import _match_html, match_line
 
 
@@ -57,11 +58,30 @@ def search_labels(sources_cfg: dict) -> dict:
     return out
 
 
-def build(history: History, cfg: dict, score=None, searches=None, discoveries=None) -> Tuple[str, str, str, List[str]]:
-    """-> (subject, text, html, near-miss urls listed). `score(near)` may add a CV match
-    ("match") to near misses; scored ones are then listed best first."""
+def _one_per_job(near: List[dict]) -> Tuple[List[dict], List[dict]]:
+    """-> (kept, repeats): the same company with a near-identical title (as for alerts) is one job."""
+    kept, repeats = [], []
+    for n in near:
+        company = norm_company(n["company"])
+        if company and any(norm_company(k["company"]) == company and similar_titles(n["title"], k["title"])
+                           for k in kept):
+            repeats.append(n)
+        else:
+            kept.append(n)
+    return kept, repeats
+
+
+def build(history: History, cfg: dict, score=None, searches=None, discoveries=None,
+          keep=None) -> Tuple[str, str, str, List[str]]:
+    """-> (subject, text, html, near-miss urls done). `keep(near)` re-checks a stored near
+    miss against today's rules; dropped ones and repeats aren't listed or scored, but are
+    returned with the listed ones, so they're marked done too. `score(near)` may add a CV
+    match ("match") to near misses; scored ones are then listed best first."""
     st = history.week_stats()
     near = history.pending_near_misses() if cfg.get("near_misses", True) else []
+    dropped = [n for n in near if keep and not keep(n)]
+    near, repeats = _one_per_job([n for n in near if n not in dropped])
+    dropped += repeats
     if near and score:
         score(near)
         near.sort(key=lambda n: -(n.get("match") or {}).get("score", -1))
@@ -159,4 +179,4 @@ def build(history: History, cfg: dict, score=None, searches=None, discoveries=No
         f'<table style="border-collapse:collapse"><tr><th {cell} align="left">source</th><th {cell}>runs</th>'
         f'<th {cell}>errors</th><th {cell}>jobs/run</th><th {cell}>matched</th><th {cell} align="left">last good run</th>'
         f'</tr>{rows}</table></div>')
-    return subject, "\n".join(t), body, [n["url"] for n in near]
+    return subject, "\n".join(t), body, [n["url"] for n in near + dropped]

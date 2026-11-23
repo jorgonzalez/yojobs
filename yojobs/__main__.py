@@ -168,13 +168,19 @@ def send_weekly(args, cfg: dict, store: Store) -> int:
             found = discovery.run(store.db, cfg, limit=limit)
         except Exception as exc:  # board suggestions are a bonus: never block the weekly email
             note(f"Board discovery failed ({type(exc).__name__}: {exc}); weekly summary sent without it")
+    profiles = cfg.get("profiles") or []
+
+    def keep(n):  # stored near misses: still fit today's rules? (rules may have changed since)
+        job = Job(source=n["source"], title=n["title"], company=n["company"], url=n["url"],
+                  location=n["location"], description=n.get("description") or "")
+        return not profiles or any(jobfilter.still_near_miss(job, p) for p in profiles)
     subject, text, html_body, urls = weekly.build(history, weekly_cfg, score=_near_miss_scorer(cfg, store),
                                                   searches=weekly.search_labels(cfg.get("sources") or {}),
-                                                  discoveries=found)
+                                                  discoveries=found, keep=keep)
     if not args.email:
         print(subject + "\n\n" + text)
         return 0
-    note(f"Sending the weekly summary ({len(urls)} near misses)...")
+    note("Sending the weekly summary...")
     try:
         mailer.deliver(cfg.get("email") or {}, subject, text, html_body)
     except Exception as exc:

@@ -101,7 +101,7 @@ def title_ok(job: Job, profile: dict) -> bool:
     return apply(job, profile, check_all_of=False)
 
 
-def apply(job: Job, profile: dict, check_all_of: bool = True) -> bool:
+def apply(job: Job, profile: dict, check_all_of: bool = True, check_place: bool = True) -> bool:
     """Return True if the job passes the profile; sets job.score / job.matched."""
     match_in = profile.get("match_in") or ["title"]
     exclude_in = profile.get("exclude_in") or match_in
@@ -128,7 +128,7 @@ def apply(job: Job, profile: dict, check_all_of: bool = True) -> bool:
         # source has no descriptions: can't check, so keep it but say so
         notes.append(f"{', '.join(a.split('|')[0] for a in all_of)} not verified")
 
-    if not place_ok(job, profile):
+    if check_place and not place_ok(job, profile):
         return False
 
     # groups: every group needs at least one match (AND between groups, OR inside)
@@ -149,6 +149,13 @@ def apply(job: Job, profile: dict, check_all_of: bool = True) -> bool:
     job.score = len(matched)
     job.notes = notes
     return True
+
+
+def still_near_miss(job: Job, profile: dict) -> bool:
+    """For a stored near miss: do today's title rules (exclusions, title words, language)
+    still let it through? The place was checked when it was found (its remote flag isn't
+    stored), and the required words are what it misses anyway."""
+    return apply(job, profile, check_all_of=False, check_place=False)
 
 
 def near_miss(job: Job, profile: dict) -> str:
