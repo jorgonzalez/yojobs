@@ -182,7 +182,10 @@ Real runs (`--email` and scheduled runs) keep a small history in `seen.sqlite`:
   status table of every source. It's also how you know yojobs is still running.
 - **Near misses** (in the weekly email): jobs that passed every rule except the
   required words (`ad_must_mention`), e.g. a platform leadership job whose ad never says
-  Kubernetes. Each is listed once; jobs already emailed as matches are left out.
+  Kubernetes. Each is listed once; jobs already emailed as matches are left out, and so are
+  the same company's near-identical titles. Before the email, stored near misses are checked
+  again against today's title rules (exclusions, title words, language), so a rule added
+  since they were found also keeps them out (and out of the CV scoring).
   With CV matching on, up to `near_misses_scored` (15) of them get a CV match score
   and are listed best first.
 - **Board discovery** (in the weekly email): companies from your recent matches and near

@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.29.1 — #51 [fix][weekly] Re-check stored near misses against today's rules
+- The weekly email re-checks stored near misses against today's title rules before CV
+  scoring and listing them: jobs a newer exclusion rejects (e.g. SAP, Account Manager,
+  saved before those rules) no longer use scoring slots or appear in the email.
+- Same company + near-identical title counts as one near miss (as for alerts).
+- The same job from another portal (same key) is marked done with the listed one, so it
+  no longer comes back the following week.
+
 ## v0.29.0 — #50 [feat][sources] Optional Stapply job dataset source (off by default)
 - New source `stapply`: Stapply's open daily job dataset, read with DuckDB (optional
   dependency) from Parquet over HTTP; each slice's daily snapshot read once, jobs in Germany

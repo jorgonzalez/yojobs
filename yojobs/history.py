@@ -215,7 +215,9 @@ class History:
 
     def mark_digested(self, urls: List[str]) -> None:
         now = _now()
-        self.db.executemany("UPDATE near_misses SET digested_at = ? WHERE url = ?", [(now, u) for u in urls])
+        # the same job from other portals (same key) is done too, so it doesn't come back next week
+        self.db.executemany("UPDATE near_misses SET digested_at = ? WHERE digested_at IS NULL AND (url = ? OR key = "
+                            "(SELECT key FROM near_misses WHERE url = ?))", [(now, u, u) for u in urls])
         # forget near misses after 60 days
         self.db.execute("DELETE FROM near_misses WHERE found_at < ?",
                         ((datetime.now(timezone.utc) - timedelta(days=60)).isoformat(),))
