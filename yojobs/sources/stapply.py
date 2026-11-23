@@ -89,7 +89,9 @@ def _where(cols: set) -> str:
     place = ["country_iso = 'DE'" if "country_iso" in cols else None,
              "coalesce(is_remote, false)" if "is_remote" in cols else None,
              "lower(workplace_type) = 'remote'" if "workplace_type" in cols else None,
-             """locations LIKE '%"country_iso":"DE"%'""" if "locations" in cols else None]
+             """locations LIKE '%"country_iso":"DE"%'""" if "locations" in cols else None,
+             # some systems (e.g. Workday) say "Remote" only in the location text, without the flag
+             "lower(location) LIKE '%remote%'" if "location" in cols else None]
     where = ["posted_at >= ?", "(" + " OR ".join(p for p in place if p) + ")"]
     if "is_stale" in cols:
         where.append("NOT coalesce(is_stale, false)")

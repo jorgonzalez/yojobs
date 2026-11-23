@@ -116,8 +116,16 @@ class Fetch(unittest.TestCase):
         run(db)
         sql = db.calls[0][0]
         for part in ("country_iso = 'DE'", "coalesce(is_remote, false)", "NOT coalesce(is_stale, false)",
-                     "posted_at >= ?"):
+                     "posted_at >= ?", "lower(location) LIKE '%remote%'"):
             self.assertIn(part, sql)
+
+
+    def test_remote_only_in_the_location_text(self):
+        job = stapply.to_job({"url": "u", "title": "Platform Lead", "location": "Remote, Germany",
+                              "is_remote": None, "workplace_type": None}, "workday")
+        self.assertIsNone(job.remote)            # unknown: the filter reads "Remote" in the location
+        from yojobs import filter as jf
+        self.assertTrue(jf.is_remote(job))
 
 
 class Weekly(unittest.TestCase):

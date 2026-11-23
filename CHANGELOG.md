@@ -4,6 +4,10 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.29.2 — #52 [fix][stapply] Keep jobs that say "Remote" only in the location
+- The Stapply query also keeps jobs whose location text says "Remote" but whose remote flag
+  isn't set (Workday: ~680 such jobs this month were skipped).
+
 ## v0.29.1 — #51 [fix][weekly] Re-check stored near misses against today's rules
 - The weekly email re-checks stored near misses against today's title rules before CV
   scoring and listing them: jobs a newer exclusion rejects (e.g. SAP, Account Manager,
