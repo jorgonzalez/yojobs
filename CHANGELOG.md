@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.30.1 — #54 [fix][weworkremotely] Use the ad's remote location, not "Anywhere in the World"
+- We Work Remotely tags many jobs "Anywhere in the World" that are remote in one country
+  only (Reddit "Remote - United States", Pinterest "Remote, CA, US", Grafana "Republic of
+  Ireland (Remote)"). The ad's "Headquarters:" line is now the location when it mentions
+  remote work and names a place; a plain head office ("San Francisco, CA") or a bare
+  "Remote" keeps the feed's region. In today's feed: 69 of 100 locations more precise,
+  4 US/Ireland/Canada-only jobs no longer pass.
+
 ## v0.30.0 — #53 [feat][companies] Read company boards on Deel's hiring system (jobs.deel.com)
 - New hiring system `deel` in `companies.yaml` (`deel: [<id>]` for `jobs.deel.com/<id>`): one
   page per company holds every job with its ad text, places and work mode (robots.txt allows
