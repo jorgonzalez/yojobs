@@ -26,7 +26,7 @@ from typing import Dict, List
 
 import yaml
 
-SYSTEMS = ("greenhouse", "lever", "ashby", "personio", "recruitee", "teamtailor", "pinpoint")
+SYSTEMS = ("greenhouse", "lever", "ashby", "personio", "recruitee", "teamtailor", "pinpoint", "deel")
 SEARCH_SOURCES = ("linkedin", "indeed", "stepstone", "remotecom")
 
 
