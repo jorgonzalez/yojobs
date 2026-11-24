@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.30.0 — #53 [feat][companies] Read company boards on Deel's hiring system (jobs.deel.com)
+- New hiring system `deel` in `companies.yaml` (`deel: [<id>]` for `jobs.deel.com/<id>`): one
+  page per company holds every job with its ad text, places and work mode (robots.txt allows
+  these pages; its `/api/` is off-limits and not used).
+- Deel's own page (`deel: [deel]`) lists jobs fed from Ashby with countries but no ad text or
+  work mode: the job pages of up to 5 unknown jobs per run whose title would fit (as remote)
+  are opened, with 2–4 s pauses; a 403/429 stops them for that run.
+
 ## v0.29.2 — #52 [fix][stapply] Keep jobs that say "Remote" only in the location
 - The Stapply query also keeps jobs whose location text says "Remote" but whose remote flag
   isn't set (Workday: ~680 such jobs this month were skipped).

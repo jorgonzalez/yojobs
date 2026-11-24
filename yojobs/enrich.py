@@ -61,7 +61,7 @@ def _mode(value: str) -> Optional[bool]:
     return None
 
 
-def _page(url: str) -> str:
+def fetch_page(url: str) -> str:
     """One attempt, no retries: a 403/429 stops lookups at that site for this run."""
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "text/html,*/*"})
     try:
@@ -150,7 +150,7 @@ def job_posting(html: str) -> Optional[Details]:
     return None
 
 
-def _next_stream(html: str) -> str:
+def next_stream(html: str) -> str:
     """The Next.js data stream: the strings passed to self.__next_f.push([1, "..."])."""
     out = []
     for s in re.findall(r'self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)', html):
@@ -164,7 +164,7 @@ def _next_stream(html: str) -> str:
 def fourdayweek(html: str, url: str) -> Optional[Details]:
     """4dayweek job page: the job object embedded in the page (work_arrangement, locations,
     description = a reference to a text chunk "<id>:T<hex length>,<text>")."""
-    stream = _next_stream(html)
+    stream = next_stream(html)
     slug = urllib.parse.urlparse(url).path.rstrip("/").rsplit("/", 1)[-1]
     i = stream.find(f'"slug":"{slug}"')
     start = stream.rfind('{"id"', 0, i) if i >= 0 else -1
@@ -202,7 +202,7 @@ _PAGES: List = [
 class Enricher:
     """Fills in jobs for one run: limit, pauses, and sites that said 403/429 are skipped."""
 
-    def __init__(self, limit: int = MAX_PER_RUN, pause=PAUSE, page: Callable[[str], str] = _page):
+    def __init__(self, limit: int = MAX_PER_RUN, pause=PAUSE, page: Callable[[str], str] = fetch_page):
         self.limit, self.pause, self.page = limit, pause, page
         self.done = 0
         self.blocked: Dict[str, str] = {}

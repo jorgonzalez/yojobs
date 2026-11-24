@@ -141,5 +141,91 @@ class Pinpoint(unittest.TestCase):
         self.assertEqual(cfg["sources"]["companies"]["boards"], ["pinpoint:careers.admgroup.com"])
 
 
+class Deel(unittest.TestCase):
+    """jobs.deel.com: trimmed copies of Klarna's list page, Deel's own (Ashby-fed) list page
+    and one Deel job page."""
+    HERE = Path(__file__).parent
+    KLARNA = (HERE / "fixture_deel_klarna.html").read_bytes()
+    LIST = (HERE / "fixture_deel_list.html").read_bytes()
+    JOB = (HERE / "fixture_deel_job.html").read_text()
+    DEVOPS = "https://jobs.deel.com/deel/job-details/b0a75cf2-85b9-442c-8082-d931e8f2cda2/overview"
+
+    def setUp(self):
+        self.urls = []
+        patcher = mock.patch.object(companies, "get_bytes", lambda url, params=None: self.urls.append(url) or (
+            self.KLARNA if url.endswith("/klarna") else self.LIST))
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        pause = mock.patch.object(companies, "DEEL_PAUSE", (0, 0))
+        pause.start()
+        self.addCleanup(pause.stop)
+
+    def test_generic_list_page(self):
+        onsite, hybrid = companies._deel("klarna")
+        self.assertEqual(self.urls, ["https://jobs.deel.com/klarna"])
+        self.assertEqual((onsite.title, onsite.company, onsite.location), ("Business Development Associate", "Klarna", "Vienna, Austria"))
+        self.assertEqual((onsite.remote, onsite.work_mode), (False, "onsite"))
+        self.assertEqual((hybrid.remote, hybrid.work_mode, hybrid.location), (False, "hybrid", "Sweden"))
+        self.assertEqual(onsite.published.isoformat()[:19], "2026-07-17T14:16:35")   # when it was published
+        self.assertTrue(onsite.url.startswith("https://jobs.deel.com/klarna/job-details/") and onsite.url.endswith("/overview"))
+        self.assertIn("Business Development Associate", onsite.description)        # text row ("$1a")
+        self.assertNotIn("<p>", onsite.description)
+        self.assertEqual(onsite.tags, ["Business Development"])
+
+    def test_own_page_opens_fitting_job_pages(self):
+        opened = []
+        page = lambda url: opened.append(url) or (self.JOB if url == self.DEVOPS else "<html></html>")
+        # the list has countries but no work mode: the title check sees the job as remote
+        title_ok = lambda job: "DevOps" in job.title and job.remote is True
+        jobs = companies._deel("deel", title_ok=title_ok, page=page)
+        self.assertEqual([j.title for j in jobs], ["Account Executive, Mid-Market | Norway", "DevOps Team lead"])  # unlisted dropped
+        self.assertEqual(opened, [self.DEVOPS])
+        other, devops = jobs
+        self.assertEqual((other.description, other.remote, other.location), ("", None, "Sweden, Norway"))
+        self.assertEqual((devops.remote, devops.work_mode), (True, "remote"))
+        self.assertIn("Germany", devops.location)
+        self.assertIn("Kubernetes", devops.description)
+        self.assertEqual(devops.published.isoformat()[:19], "2026-11-23T14:52:46")
+
+    def test_own_page_skips_known_jobs_and_stops_when_blocked(self):
+        from yojobs.enrich import Blocked
+        opened = []
+        def page(url):
+            opened.append(url)
+            raise Blocked("HTTP 429")
+        jobs = companies._deel("deel", title_ok=lambda job: True, page=page)
+        self.assertEqual(len(opened), 1)                 # stopped at the first 429
+        self.assertTrue(all(not j.description for j in jobs))
+        opened.clear()
+        companies._deel("deel", title_ok=lambda job: True, known=lambda job: True, page=page)
+        self.assertEqual(opened, [])
+        companies._deel("deel", page=page)               # no title check: no job pages
+        self.assertEqual(opened, [])
+
+    def test_text_rows_without_newlines(self):
+        # a text row is followed directly by the next row; lengths are in bytes (é is 2)
+        rows = companies._text_rows('0:["$","div",null,{}]\n1a:T6,héllo1b:T3,abc2:{"x":"$1a"}\n')
+        self.assertEqual(rows, {"1a": "héllo", "1b": "abc"})
+
+    def test_no_job_list(self):
+        with mock.patch.object(companies, "get_bytes", lambda url, params=None: b"<html>maintenance</html>"):
+            with self.assertRaises(ValueError):
+                companies._deel("acme")
+
+    def test_filters(self):
+        from yojobs import filter as jobfilter
+        profile = {"groups": {"role": ["Lead"], "area": ["DevOps"]}, "all_of": ["Kubernetes"],
+                   "onsite_cities": ["Berlin"], "remote_regions": ["Germany"]}
+        page = lambda url: self.JOB if url == self.DEVOPS else "<html></html>"
+        title_ok = lambda job: jobfilter.title_ok(job, profile)
+        jobs = companies._deel("deel", title_ok=title_ok, page=page)
+        self.assertEqual([j.title for j in jobs if jobfilter.apply(j, profile)], ["DevOps Team lead"])
+
+    def test_config_accepts_deel(self):
+        from yojobs.config import normalize
+        cfg = normalize({"sources": {"companies": True}, "companies": {"deel": ["deel", "klarna"]}})
+        self.assertEqual(cfg["sources"]["companies"]["boards"], ["deel:deel", "deel:klarna"])
+
+
 if __name__ == "__main__":
     unittest.main()

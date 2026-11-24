@@ -7,6 +7,7 @@
 #   recruitee   <id>.recruitee.com
 #   teamtailor  <id>.teamtailor.com   (or the company's own career domain, e.g. careers.acme.com)
 #   pinpoint    <id>.pinpointhq.com   (or the company's own career domain, e.g. careers.acme.com)
+#   deel        jobs.deel.com/<id>   (e.g. deel: [deel])
 # A board that stops working is reported in the weekly email.
 companies:
   greenhouse: [gitlab, grafanalabs, elastic, datadog, mongodb, canonical, vercel, cloudflare,

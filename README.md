@@ -346,6 +346,7 @@ Find its jobs page, take the id from the address, and add it to the right list i
 | `<id>.recruitee.com` | `recruitee` |
 | `<id>.teamtailor.com` (or a company's own career site "powered by Teamtailor") | `teamtailor` (id, or the career domain) |
 | `<id>.pinpointhq.com` (or a company's own career site run by Pinpoint) | `pinpoint` (id, or the career domain); no posting dates, so the company name comes from the domain |
+| `jobs.deel.com/<id>` (Deel's hiring system) | `deel`; one page per company holds every job. Deel's own page lists jobs without the ad, so the ads of up to 5 fitting jobs per run are opened |
 
 SmartRecruiters and Workable aren't supported: SmartRecruiters' API robots.txt only
 allows LinkedIn's bot, and Workable rate-limits after a handful of requests.
