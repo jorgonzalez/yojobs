@@ -12,6 +12,8 @@ this module decides if that tick should actually run:
   * no run starts in a Power Nap wake: macOS wakes a sleeping Mac for a few seconds
     now and then (and launchd fires then), so a run would crawl along in those slices
     all night and its downloads time out; the next real wake starts it instead
+  * while a run is going the Mac doesn't idle-sleep (`caffeinate -i`), so a run started
+    just before you walk away still finishes; closing the lid on battery still sleeps
 
 State lives in a small JSON file next to the database (git-ignored).
 """
@@ -19,6 +21,7 @@ from __future__ import annotations
 
 import fcntl
 import json
+import os
 import re
 import subprocess
 from datetime import datetime, time, timedelta
@@ -94,6 +97,26 @@ def dark_wake(run=subprocess.run) -> bool:
         return False
     m = re.search(r"Current System Capabilities are:(.*)", out or "")
     return bool(m) and "Graphics" not in m.group(1)
+
+
+def keep_awake(popen=subprocess.Popen):
+    """Start `caffeinate -i -w <this process>`: no idle sleep until this process ends
+    (caffeinate then exits by itself). -> the process to stop, or None if unavailable."""
+    try:
+        return popen(["caffeinate", "-i", "-w", str(os.getpid())],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        return None
+
+
+def stop_awake(proc) -> None:
+    if proc is None:
+        return
+    try:
+        proc.terminate()
+        proc.wait(timeout=5)
+    except Exception:  # it ends with this process anyway
+        pass
 
 
 class RunLock:
