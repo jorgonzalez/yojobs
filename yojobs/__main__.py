@@ -18,7 +18,7 @@ from . import __version__, enrich, logs, mailer, matching, weekly, workmode
 from .history import History, SourceRun
 from . import progress
 from .progress import note, say, step
-from .schedule import RunLock, State, dark_wake, is_due
+from .schedule import RunLock, State, dark_wake, is_due, keep_awake, stop_awake
 from .sources import SOURCES
 from .config import default_path, load_config
 from .models import Job
@@ -117,8 +117,9 @@ def scheduled(args, cfg: dict, store: Store) -> int:
     if not lock.acquire():
         note("Another yojobs run is still in progress; skipping this one")
         return 0
+    awake = keep_awake()  # no idle sleep until the run (incl. the weekly email) is done
     try:
-        note(f"Scheduled run starting ({reason})")
+        note(f"Scheduled run starting ({reason}){'' if awake else '; caffeinate unavailable, the Mac may sleep'}")
         max_age = cfg.get("max_age_days", 3)
         if store.is_empty():
             days = cfg.get("first_run_days", 30)
@@ -141,6 +142,7 @@ def scheduled(args, cfg: dict, store: Store) -> int:
             note("Scheduled run failed (no source answered or email not sent); will retry next tick")
         return code
     finally:
+        stop_awake(awake)
         lock.release()
 
 

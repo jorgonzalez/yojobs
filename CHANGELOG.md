@@ -4,6 +4,12 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.30.3 — #56 [fix][schedule] Keep the Mac awake while a scheduled run is going
+- A scheduled run starts `caffeinate -i -w <its process>`: the Mac doesn't idle-sleep until
+  the run (and a weekly email it sends) is done, so a run started just before you walk
+  away finishes instead of stalling in sleep. Closing the lid on battery still sleeps.
+- Without caffeinate (not macOS) the run goes ahead and says so in the log.
+
 ## v0.30.2 — #55 [fix][schedule] Don't start a scheduled run in a Power Nap wake
 - macOS wakes a sleeping Mac for a few seconds now and then (Power Nap / maintenance),
   and launchd fires then: on 24 Nov a run started at 20:19 that way crawled along in those
