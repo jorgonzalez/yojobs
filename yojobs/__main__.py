@@ -18,7 +18,7 @@ from . import __version__, enrich, logs, mailer, matching, weekly, workmode
 from .history import History, SourceRun
 from . import progress
 from .progress import note, say, step
-from .schedule import RunLock, State, is_due
+from .schedule import RunLock, State, dark_wake, is_due
 from .sources import SOURCES
 from .config import default_path, load_config
 from .models import Job
@@ -105,6 +105,8 @@ def scheduled(args, cfg: dict, store: Store) -> int:
     state = State(ROOT / cfg.get("schedule_state", "schedule_state.json"))
     now = datetime.now()
     due, reason = is_due(cfg.get("schedule") or {}, state, now)
+    if due and dark_wake():
+        due, reason = False, "the Mac is in a Power Nap wake (asleep); waiting for it to wake up"
     if args.check_schedule or not due:
         # checks run every 10 minutes: log "not due" at most once an hour
         if args.check_schedule or state.log_once_per_hour(now):

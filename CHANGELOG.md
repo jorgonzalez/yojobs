@@ -4,6 +4,13 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.30.2 — #55 [fix][schedule] Don't start a scheduled run in a Power Nap wake
+- macOS wakes a sleeping Mac for a few seconds now and then (Power Nap / maintenance),
+  and launchd fires then: on 24 Nov a run started at 20:19 that way crawled along in those
+  slices until 09:18 the next day, and 6 company boards timed out. A due run now waits
+  when `pmset -g systemstate` shows no graphics (a "dark wake"); the next real wake starts
+  it. If pmset can't be read, runs go ahead as before.
+
 ## v0.30.1 — #54 [fix][weworkremotely] Use the ad's remote location, not "Anywhere in the World"
 - We Work Remotely tags many jobs "Anywhere in the World" that are remote in one country
   only (Reddit "Remote - United States", Pinterest "Remote, CA, US", Grafana "Republic of

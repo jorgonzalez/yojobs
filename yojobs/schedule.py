@@ -9,6 +9,9 @@ this module decides if that tick should actually run:
   * a new day starts fresh: missed runs from earlier days are not caught up
   * a run only counts if it worked (some source answered and the email, if any,
     was sent); otherwise the next tick tries again
+  * no run starts in a Power Nap wake: macOS wakes a sleeping Mac for a few seconds
+    now and then (and launchd fires then), so a run would crawl along in those slices
+    all night and its downloads time out; the next real wake starts it instead
 
 State lives in a small JSON file next to the database (git-ignored).
 """
@@ -16,6 +19,8 @@ from __future__ import annotations
 
 import fcntl
 import json
+import re
+import subprocess
 from datetime import datetime, time, timedelta
 from pathlib import Path
 from typing import Optional, Tuple
@@ -77,6 +82,18 @@ def is_due(cfg: dict, state: State, now: datetime) -> Tuple[bool, str]:
             return False, f"last run at {today[-1]:%H:%M}; next one from {next_at:%H:%M}"
         return True, f"{float(c['min_gap_hours']):g}h since the last run at {today[-1]:%H:%M}"
     return True, "first run today"
+
+
+def dark_wake(run=subprocess.run) -> bool:
+    """True in a macOS Power Nap / maintenance wake ("DarkWake"): the system runs but
+    without graphics, as `pmset -g systemstate` shows ("Current System Capabilities are:
+    CPU Network Disk" vs "CPU Graphics Audio Network"). Unknown -> False (don't block runs)."""
+    try:
+        out = run(["pmset", "-g", "systemstate"], capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return False
+    m = re.search(r"Current System Capabilities are:(.*)", out or "")
+    return bool(m) and "Graphics" not in m.group(1)
 
 
 class RunLock:
