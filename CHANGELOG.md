@@ -4,6 +4,13 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.30.4 — #57 [fix][filter] Trust a "Remote <place>" location over a hybrid tag
+- A job tagged hybrid whose location says remote ("Remote Germany") now counts as remote,
+  so the normal region rule decides it. vivenu's Platform Team Lead on Lever was dropped
+  because "Remote Germany" isn't Berlin.
+- Locations that also say hybrid or on-site, and ads that ask for office days, are
+  handled as before: the office must be in `onsite_cities`.
+
 ## v0.30.3 — #56 [fix][schedule] Keep the Mac awake while a scheduled run is going
 - A scheduled run starts `caffeinate -i -w <its process>`: the Mac doesn't idle-sleep until
   the run (and a weekly email it sends) is done, so a run started just before you walk

@@ -82,6 +82,18 @@ class Titles(unittest.TestCase):
         self.assertFalse(passes("DevOps Manager", location="Cork, County Cork, Ireland", remote=True))
         self.assertFalse(passes("DevOps Manager", location="Paris, Île-de-France, France", remote=True))
 
+    def test_hybrid_tag_with_remote_location(self):
+        def job(location, work_mode="hybrid", description="We run everything on Kubernetes."):
+            return Job("t", "Platform Team Lead", "Acme", "https://x", location=location,
+                       description=description, remote=False, work_mode=work_mode)
+        self.assertTrue(F.apply(job("Remote Germany"), PROFILE))          # vivenu on Lever
+        self.assertFalse(F.apply(job("Remote Germany", work_mode="onsite"), PROFILE))
+        self.assertFalse(F.apply(job("Munich, Germany"), PROFILE))        # hybrid elsewhere
+        self.assertFalse(F.apply(job("Remote or Hybrid - Munich"), PROFILE))
+        self.assertFalse(F.apply(job("Remote - United States"), PROFILE))  # still needs a region
+        self.assertFalse(F.apply(job("Remote Germany", description=(
+            "We run everything on Kubernetes. You work 3 days a week from our Munich office.")), PROFILE))
+
     def test_location(self):
         self.assertTrue(passes("DevOps Manager", location="Europe Only"))
         self.assertFalse(passes("DevOps Manager", location="USA Only"))

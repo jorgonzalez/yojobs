@@ -73,7 +73,17 @@ def location_ok(location: str, allowed: List[str]) -> bool:
 _REMOTE_WORDS = re.compile(r"\b(remote|anywhere|worldwide|work from home|wfh|distributed)\b", re.IGNORECASE)
 
 
+_REMOTE_PLACE = re.compile(r"\bremote\b", re.IGNORECASE)
+_OFFICE_PLACE = re.compile(r"\b(hybrid|on[\s-]?site|in[\s-]office)\b", re.IGNORECASE)
+
+
 def is_remote(job: Job) -> bool:
+    if job.remote is False and job.work_mode.lower().replace("-", "") == "hybrid" \
+            and _REMOTE_PLACE.search(job.location) and not _OFFICE_PLACE.search(job.location):
+        # a "hybrid" tag on a job whose location says "Remote Germany" (vivenu on Lever):
+        # the location is the more specific of the two. An ad that asks for office days
+        # is still caught by place_ok's office_required check.
+        return True
     if job.remote is not None:
         return job.remote
     return not job.location or bool(_REMOTE_WORDS.search(job.location))
