@@ -21,6 +21,10 @@ matching:
   ollama_url: http://localhost:11434
   cv_dir: cv
   max_jobs_per_run: 20       # more new jobs than this are emailed without a score
+  # near misses (only the required words missing, e.g. no Kubernetes in the ad) with at least
+  # this CV match are emailed right away, marked "near miss"; 0 = only in the weekly email
+  near_miss_min_score: 75
+  near_misses_per_run: 5      # new near misses CV-scored per run (cached)
   context_tokens: 16384      # room for CV + wishes + ad; Ollama's default (~2048) cuts long CVs
   # What the model rates (1 to 5, one request either way); yojobs computes the score:
   #   role       can you do the job (skills + experience + seniority)  strong/good/partial/weak

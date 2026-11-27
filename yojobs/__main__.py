@@ -319,6 +319,18 @@ def run(args, cfg: dict, store: Store, days: float):
         say(f"[{i}/{len(selected)}] {name}: {len(kept)} matched ({time.time() - t0:.0f}s)")
 
     progress.end()
+    if near:
+        # a near miss with a high CV match is emailed now, marked with what it lacks
+        strong = matching.strong_near_misses(
+            near, cfg, ROOT, store.db, skip=lambda j: store.is_seen(j) or history_now.known_near_miss(j.url))
+        for j, reason in strong:
+            j.notes = list(j.notes) + [f"near miss: {reason}"]
+            if not jobfilter.is_remote(j) or workmode.office_required(j.description):
+                j.work_hint = workmode.describe(j)
+            results.append(j)
+        if strong:
+            say(f"{len(strong)} near misses with a high CV match added to the matches")
+            near = [(j, r) for j, r in near if all(j is not s for s, _ in strong)]
     results.sort(key=lambda j: (j.score, j.published or since), reverse=True)
 
     new, outcomes = store.sort_matches(results)

@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.31.0 — #58 [feat][matching] Email near misses with a high CV match right away
+- A near miss (passed every rule except the required words, e.g. no "Kubernetes" in the
+  ad) whose CV match is at least `near_miss_min_score` (75) goes out with the next alert,
+  marked "near miss: no Kubernetes in the ad", instead of waiting for the weekly email.
+  Example: Capco's Infrastructure Manager (83%) only showed up in a weekly email.
+- Up to `near_misses_per_run` (5) new near misses are CV-scored per run (cached, local
+  Ollama, no site requests). `near_miss_min_score: 0` keeps the old behaviour.
+
 ## v0.30.4 — #57 [fix][filter] Trust a "Remote <place>" location over a hybrid tag
 - A job tagged hybrid whose location says remote ("Remote Germany") now counts as remote,
   so the normal region rule decides it. vivenu's Platform Team Lead on Lever was dropped
