@@ -172,5 +172,48 @@ class CvFiles(Base):
         f, text, wishes = matching.load_cv(self.root, matching.settings(ROOT_CFG))
         self.assertEqual((f.name, text, wishes), ("CV_Name_2026.txt", "new", "wishes"))
 
+class StrongNearMisses(Base):
+    """Near misses with a high CV match are emailed right away (strong_near_misses)."""
+    def pick(self, near, cfg=ROOT_CFG, answer=ANSWER, skip=lambda j: False):
+        self.cv()
+        calls = []
+        with mock.patch.object(matching, "ollama_models", return_value=["gpt-oss:20b"]), \
+                mock.patch.object(matching, "_post", lambda u, b, t: calls.append(b) or
+                                  {"message": {"content": json.dumps(answer)}}), mock.patch.object(matching, "note"):
+            return matching.strong_near_misses(near, cfg, self.root, self.db, skip=skip), calls
+
+    def test_high_score_is_picked(self):
+        j = job("Infrastructure Manager", "AI Ops on GCP.")
+        picked, _ = self.pick([(j, "no Kubernetes in the ad")])   # strong role, neutral wishes: 88
+        self.assertEqual(picked, [(j, "no Kubernetes in the ad")])
+
+    def test_low_score_stays_a_near_miss(self):
+        picked, _ = self.pick([(job(), "no Kubernetes in the ad")], answer={**ANSWER, "role": "partial"})
+        self.assertEqual(picked, [])
+
+    def test_threshold_and_off_switch(self):
+        cfg = {"matching": {**ROOT_CFG["matching"], "near_miss_min_score": 90}}
+        self.assertEqual(self.pick([(job(), "no Kubernetes in the ad")], cfg)[0], [])
+        cfg = {"matching": {**ROOT_CFG["matching"], "near_miss_min_score": 0}}
+        picked, calls = self.pick([(job(), "no Kubernetes in the ad")], cfg)
+        self.assertEqual((picked, calls), ([], []))                 # off: nothing scored
+        self.assertEqual(matching.strong_near_misses([(job(), "x")], {}, self.root, self.db), [])  # matching off
+
+    def test_skips_known_and_textless_and_limits_per_run(self):
+        near = [(job(f"Platform Manager {i}"), "no Kubernetes in the ad") for i in range(8)]
+        near.insert(0, (job("No Text", ""), "ad text not available"))
+        known = near[1][0]
+        picked, calls = self.pick(near, skip=lambda j: j is known)
+        self.assertEqual(len(calls), 5)                              # near_misses_per_run
+        self.assertNotIn(known, [j for j, _ in picked])
+        self.assertNotIn("No Text", [j.title for j, _ in picked])
+
+    def test_cached_scores_are_not_asked_again(self):
+        near = [(job(), "no Kubernetes in the ad")]
+        self.pick(near)
+        _, calls = self.pick([(job(), "no Kubernetes in the ad")])
+        self.assertEqual(calls, [])
+
+
 if __name__ == "__main__":
     unittest.main()

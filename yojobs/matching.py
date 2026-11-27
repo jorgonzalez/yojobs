@@ -35,6 +35,11 @@ DEFAULTS = {
     "think": "low",            # gpt-oss reasoning effort: low is ~20 s per job on an M2 and good enough
     "timeout_seconds": 300,
     "max_jobs_per_run": 20,    # more new jobs than this are emailed without a score
+    # Near misses (failed only the required words, e.g. no "Kubernetes" in the ad) with at
+    # least this CV match are emailed right away instead of waiting for the weekly email.
+    # 0 turns it off. At most near_misses_per_run new ones are scored per run.
+    "near_miss_min_score": 75,
+    "near_misses_per_run": 5,
     # Room for CV + wishes + ad + answer. Ollama's default can be as low as 2048 tokens,
     # which silently cuts the prompt (a ~1,000-word CV plus an ad is ~4,500 tokens).
     "context_tokens": 16384,
@@ -260,6 +265,25 @@ def score_jobs(jobs: List[Job], cfg: dict, root: Path, db: sqlite3.Connection) -
             continue
         cache.put(job.url, fp, job.match)
         say(f"CV match {n}/{len(todo)}: {job.match['score']}% ({time.time() - t0:.0f}s)")
+
+
+def strong_near_misses(near: List[Tuple[Job, str]], cfg: dict, root: Path, db: sqlite3.Connection,
+                       skip=lambda job: False) -> List[Tuple[Job, str]]:
+    """The near misses (job, reason) whose CV match reaches near_miss_min_score: good jobs
+    held back only by a missing required word. Only ads with text, not skip(job) (already
+    sent or already a near miss), up to near_misses_per_run; scores are cached like the
+    alerts' ones. Never raises (no scores = none)."""
+    s = settings(cfg)
+    limit, per_run = int(s.get("near_miss_min_score") or 0), int(s.get("near_misses_per_run") or 0)
+    if not s["enabled"] or limit <= 0 or per_run <= 0:
+        return []
+    todo = [(j, r) for j, r in near if j.description and not skip(j)][:per_run]
+    try:
+        score_jobs([j for j, _ in todo], {**cfg, "matching": {**s, "max_jobs_per_run": per_run}}, root, db)
+    except Exception as exc:
+        note(f"CV match of near misses failed: {type(exc).__name__}: {exc}")
+        return []
+    return [(j, r) for j, r in todo if (j.match or {}).get("score", -1) >= limit]
 
 
 def by_score(jobs: List[Job]) -> List[Job]:

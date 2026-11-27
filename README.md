@@ -188,6 +188,9 @@ Real runs (`--email` and scheduled runs) keep a small history in `seen.sqlite`:
   since they were found also keeps them out (and out of the CV scoring).
   With CV matching on, up to `near_misses_scored` (15) of them get a CV match score
   and are listed best first.
+  A near miss whose CV match reaches `near_miss_min_score` (75, in `matching.yaml`; 0 = off)
+  doesn't wait for the weekly email: it goes out with the next alert, marked
+  "near miss: no Kubernetes in the ad" (up to `near_misses_per_run`, 5, scored per run).
 - **Board discovery** (in the weekly email): companies from your recent matches and near
   misses are checked once for a public job board on the six hiring systems; found boards
   are suggested with the line to add to `config/companies.yaml` (`discover_boards`, 0 = off).
