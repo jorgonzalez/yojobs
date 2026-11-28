@@ -3,7 +3,7 @@
 config/
   settings.yaml   how yojobs runs: look-back, schedule, email, database, weekly, health
   profile.yaml    what you're looking for (title words, required/excluded words, places)
-  blocklist.yaml  companies you never want to see
+  blocklist.yaml  companies you never want to see (+ company_lists: warn/block lists)
   sources.yaml    which portals are on/off, plus their options
   searches.yaml   LinkedIn/Indeed search terms x places
   companies.yaml  company career pages, grouped by hiring system
@@ -25,6 +25,8 @@ from pathlib import Path
 from typing import Dict, List
 
 import yaml
+
+from . import company_lists
 
 SYSTEMS = ("greenhouse", "lever", "ashby", "personio", "recruitee", "teamtailor", "pinpoint", "deel")
 SEARCH_SOURCES = ("linkedin", "indeed", "stepstone", "remotecom")
@@ -163,6 +165,8 @@ def load_config(path: Path) -> dict:
         sys.exit(f"Config not found: {path}. Copy config.example/ to config/ first "
                  f"(cp -R config.example config).")
     try:
-        return normalize(read_raw(path))
-    except (ConfigError, yaml.YAMLError) as exc:
+        cfg = normalize(read_raw(path))
+        company_lists.resolve(cfg, path if path.is_dir() else path.parent)
+        return cfg
+    except (ConfigError, company_lists.ListError, yaml.YAMLError) as exc:
         sys.exit(f"Config problem: {exc}")

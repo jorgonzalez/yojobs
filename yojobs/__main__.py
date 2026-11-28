@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from . import filter as jobfilter
-from . import __version__, enrich, logs, mailer, matching, weekly, workmode
+from . import __version__, company_lists, enrich, logs, mailer, matching, weekly, workmode
 from .history import History, SourceRun
 from . import progress
 from .progress import note, say, step
@@ -180,7 +180,8 @@ def send_weekly(args, cfg: dict, store: Store) -> int:
         return not profiles or any(jobfilter.still_near_miss(job, p) for p in profiles)
     subject, text, html_body, urls = weekly.build(history, weekly_cfg, score=_near_miss_scorer(cfg, store),
                                                   searches=weekly.search_labels(cfg.get("sources") or {}),
-                                                  discoveries=found, keep=keep)
+                                                  discoveries=found, keep=keep,
+                                                  flag=lambda company: company_lists.flag(cfg, company))
     if not args.email:
         print(subject + "\n\n" + text)
         return 0
@@ -331,6 +332,10 @@ def run(args, cfg: dict, store: Store, days: float):
         if strong:
             say(f"{len(strong)} near misses with a high CV match added to the matches")
             near = [(j, r) for j, r in near if all(j is not s for s, _ in strong)]
+    for j in results:  # company_lists with action: warn
+        label = company_lists.flag(cfg, j.company)
+        if label:
+            j.notes = list(j.notes) + [f"⚠ {label}"]
     results.sort(key=lambda j: (j.score, j.published or since), reverse=True)
 
     new, outcomes = store.sort_matches(results)
