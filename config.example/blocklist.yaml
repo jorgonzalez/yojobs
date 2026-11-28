@@ -7,3 +7,15 @@
 #     - Example Corp
 #     - Another Company GmbH
 blocked_companies: []
+
+# Longer lists in files (relative to this folder), each with what to do with its jobs:
+#   warn   emailed as usual, with a "⚠ <label>" note (also on weekly near misses)
+#   block  like blocked_companies above
+# A list file has one company per line, other names after "|", "#" for comments:
+#   Cair Paravel Systems | Cair Paravel     # founded in Narnia, HQ in Archenland
+#   Lantern Waste Labs
+#
+# company_lists:
+#   - file: company_lists/narnia.txt
+#     label: Narnian company
+#     action: warn

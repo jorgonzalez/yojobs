@@ -4,6 +4,14 @@ One version per merged pull request, tagged `vX.Y.Z` on its merge commit.
 `[feat]` raises the minor version (0.5.0 → 0.6.0); `[fix]`, `[docs]`, `[chore]` and
 other types raise the patch version (0.5.0 → 0.5.1).
 
+## v0.32.0 — #59 [feat][blocklist] Company lists that warn about or block companies
+- `company_lists:` in `blocklist.yaml` names files of companies (one per line, other names
+  after `|`, `#` comments), each with an action: `warn` emails the jobs with a
+  "⚠ <label>" note (alerts and weekly near misses), `block` adds the names to
+  `blocked_companies`.
+- Whole names only, compared like the blocklist (case, punctuation, legal suffixes
+  ignored). A missing file or unknown action stops with a config message.
+
 ## v0.31.0 — #58 [feat][matching] Email near misses with a high CV match right away
 - A near miss (passed every rule except the required words, e.g. no "Kubernetes" in the
   ad) whose CV match is at least `near_miss_min_score` (75) goes out with the next alert,

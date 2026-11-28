@@ -72,16 +72,21 @@ def _one_per_job(near: List[dict]) -> Tuple[List[dict], List[dict]]:
 
 
 def build(history: History, cfg: dict, score=None, searches=None, discoveries=None,
-          keep=None) -> Tuple[str, str, str, List[str]]:
+          keep=None, flag=None) -> Tuple[str, str, str, List[str]]:
     """-> (subject, text, html, near-miss urls done). `keep(near)` re-checks a stored near
     miss against today's rules; dropped ones and repeats aren't listed or scored, but are
     returned with the listed ones, so they're marked done too. `score(near)` may add a CV
-    match ("match") to near misses; scored ones are then listed best first."""
+    match ("match") to near misses; scored ones are then listed best first. `flag(company)`
+    may return a label (company_lists, action: warn) shown with the near miss."""
     st = history.week_stats()
     near = history.pending_near_misses() if cfg.get("near_misses", True) else []
     dropped = [n for n in near if keep and not keep(n)]
     near, repeats = _one_per_job([n for n in near if n not in dropped])
     dropped += repeats
+    for n in near if flag else []:  # company_lists with action: warn
+        label = flag(n["company"])
+        if label:
+            n["reason"] = f"{n['reason']} · ⚠ {label}"
     if near and score:
         score(near)
         near.sort(key=lambda n: -(n.get("match") or {}).get("score", -1))

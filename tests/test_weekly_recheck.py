@@ -60,6 +60,15 @@ class Build(unittest.TestCase):
         self.h.mark_digested(urls)
         self.assertEqual(weekly.build(self.h, {}, keep=keep)[3], [])
 
+    def test_flagged_company_is_marked(self):
+        self.h.add_near_misses([(near("Platform Lead", company=c), "no Kubernetes in the ad")
+                                for c in ("Cair Paravel GmbH", "Other")])
+        flag = lambda company: "Narnian company" if company.startswith("Cair") else ""  # noqa: E731
+        _, text, html_body, _ = weekly.build(self.h, {}, flag=flag)
+        self.assertIn("no Kubernetes in the ad · ⚠ Narnian company", text)
+        self.assertIn("⚠ Narnian company", html_body)
+        self.assertEqual(text.count("⚠"), 1)
+
     def test_same_key_from_another_portal_is_done_too(self):
         self.h.add_near_misses([(near("Platform Lead", url=u), "no Kubernetes in the ad")
                                 for u in ("https://a/1", "https://b/1")])

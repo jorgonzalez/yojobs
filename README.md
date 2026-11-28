@@ -28,7 +28,7 @@ cp -R config.example config            # then edit config/settings.yaml (email) 
 |---|---|
 | `settings.yaml` | how yojobs runs: look-back, schedule, email, database, weekly summary, health, logs |
 | `profile.yaml` | what you're looking for: title words, required and excluded words, places, languages |
-| `blocklist.yaml` | companies you never want to see |
+| `blocklist.yaml` | companies you never want to see; company lists to warn about or block |
 | `sources.yaml` | which portals are on/off, and their options |
 | `searches.yaml` | LinkedIn/Indeed search terms × places |
 | `companies.yaml` | company career pages, by hiring system |
@@ -151,6 +151,22 @@ To never hear from some companies (already applied, not interested), list them u
 `blocked_companies:` in `config/blocklist.yaml`. Case, spaces and legal suffixes are
 ignored, so `GetYourGuide` also blocks "Get Your Guide GmbH". Blocked jobs are never
 emailed and never listed as near misses.
+
+For longer lists, keep the names in files and say what to do with them, under
+`company_lists:` in the same file. `warn` emails the jobs as usual with a "⚠ label" note
+(also on weekly near misses); `block` treats the names like `blocked_companies`:
+
+```yaml
+company_lists:
+  - file: company_lists/narnia.txt    # relative to config/
+    label: Narnian company
+    action: warn                      # warn | block
+```
+
+`config/company_lists/narnia.txt` has one company per line, other names after `|`, and
+`#` comments: `Cair Paravel Systems | Cair Paravel   # founded in Narnia, HQ in Archenland`.
+Only whole names match (after the same clean-up), so a short name like "Via" doesn't
+hit "Viaplay".
 
 Sources without job descriptions (marked below) list only titles. For jobs whose title fits,
 yojobs opens the ad once to fill in the text, and the location / work mode when the source
